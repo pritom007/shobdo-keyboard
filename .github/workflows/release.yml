@@ -1,0 +1,101 @@
+name: Release
+
+# Builds a debug APK on every `v*` git tag and publishes it as a GitHub
+# Release with the APKs attached. People can download + sideload-install
+# the APK directly from the Releases page — no Play Store required.
+#
+# The APK is debug-signed (the default Android debug key). It installs via
+# sideloading (enable "install unknown apps" for your browser/file manager
+# on Android). Debug certs expire ~1 year; for a long-lived public release
+# you'd add a real signing keystore as repository secrets — see the TODO
+# note below. For an early prototype that's fine.
+#
+# To cut a release:
+#     git tag v0.1.0
+#     git push origin v0.1.0
+# The workflow creates the release + attaches the APKs automatically.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write  # needed by softprops/action-gh-release to create the release
+
+jobs:
+  release:
+    name: Build APK + publish GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Accept Android licenses + install platform 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platforms;android-36" >/dev/null
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Cache large dependencies (model + AAR)
+        id: deps-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            android/app/src/main/assets/sherpa-whisper-base
+            android/local-repo
+          key: deps-sherpa-base-${{ hashFiles('scripts/download-dependencies.sh') }}
+
+      - name: Download large dependencies
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: ./scripts/download-dependencies.sh
+
+      - name: Create local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+
+      - name: Build debug APK (per-ABI splits)
+        run: |
+          cd android
+          ./gradlew :app:assembleDebug --console=plain --stacktrace
+
+      - name: Rename APKs with the tag name
+        id: apk
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          cp android/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk \
+             "shobdo-keyboard-${tag}-arm64-v8a.apk"
+          cp android/app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk \
+             "shobdo-keyboard-${tag}-armeabi-v7a.apk"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          ls -lh "shobdo-keyboard-${tag}-arm64-v8a.apk" \
+                 "shobdo-keyboard-${tag}-armeabi-v7a.apk"
+
+      - name: Create GitHub Release + attach APKs
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.apk.outputs.tag }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            shobdo-keyboard-${{ steps.apk.outputs.tag }}-arm64-v8a.apk
+            shobdo-keyboard-${{ steps.apk.outputs.tag }}-armeabi-v7a.apk
+
+# TODO (before Play Store distribution, not needed for prototype sideloading):
+# Add a real signing keystore. Base64-encode it, store as a repo secret
+# (SIGNING_KEYSTORE_BASE64, SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD,
+# SIGNING_STORE_PASSWORD), decode + configure signingConfig in
+# app/build.gradle.kts, then switch the build to :app:assembleRelease.
