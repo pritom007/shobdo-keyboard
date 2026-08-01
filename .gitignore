@@ -10,7 +10,7 @@ android/.cxx/
 *.iml
 *.hprof
 
-# APK / AAR / keystore
+# APK / keystore
 *.apk
 *.aab
 *.ap_
@@ -35,7 +35,18 @@ debug/
 .DS_Store
 Thumbs.db
 
+# --- Large binary dependencies ----------------------------------------------
+# Fetched by `scripts/download-dependencies.sh` (one command, checksum-verified).
+# NOT committed because:
+#   - Whisper base decoder is 130 MB (> GitHub's 100 MB per-file hard limit).
+#   - Keeping the repo small means fast clones + cheap CI.
+# A fresh clone needs to run the script once before `./gradlew :app:assembleDebug`.
+# See README.md → "One-time setup".
+android/app/src/main/assets/sherpa-whisper-base/
+android/local-repo/
+
 # Python / backend
+.venv/
 backend/.venv/
 backend/venv/
 backend/__pycache__/

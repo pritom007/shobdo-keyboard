@@ -64,6 +64,7 @@ class SetupActivity : ComponentActivity() {
                     SetupScreen(
                         onEnableClick = ::openInputMethodSettings,
                         onPickClick = ::openInputMethodPicker,
+                        onVoiceClick = ::openVoiceScreen,
                     )
                 }
             }
@@ -81,6 +82,13 @@ class SetupActivity : ComponentActivity() {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         imm?.showInputMethodPicker()
     }
+
+    private fun openVoiceScreen() {
+        startActivity(
+            Intent(this, com.shobdo.keyboard.voice.VoiceActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
 }
 
 @Composable
@@ -97,6 +105,7 @@ private fun ShobdoTheme(content: @Composable () -> Unit) {
 internal fun SetupScreen(
     onEnableClick: () -> Unit,
     onPickClick: () -> Unit,
+    onVoiceClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -129,6 +138,13 @@ internal fun SetupScreen(
             bodyRes = R.string.setup_step2_body,
             buttonLabelRes = R.string.setup_step2_button,
             onClick = onPickClick,
+        )
+        Spacer(Modifier.height(24.dp))
+        StepCard(
+            titleRes = R.string.setup_voice_title,
+            bodyRes = R.string.setup_voice_body,
+            buttonLabelRes = R.string.setup_voice_button,
+            onClick = onVoiceClick,
         )
         Spacer(Modifier.height(32.dp))
         Text(
@@ -184,6 +200,6 @@ private fun StepCard(
 @Composable
 private fun SetupScreenPreview() {
     ShobdoTheme {
-        SetupScreen(onEnableClick = {}, onPickClick = {})
+        SetupScreen(onEnableClick = {}, onPickClick = {}, onVoiceClick = {})
     }
 }

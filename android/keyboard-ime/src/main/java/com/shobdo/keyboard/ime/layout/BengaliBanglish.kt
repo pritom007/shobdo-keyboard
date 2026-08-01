@@ -12,19 +12,27 @@ import com.shobdo.keyboard.ime.state.KeyboardMode
  *
  * The only visible difference from English mode is the language toggle
  * label, which reads "En" so the user knows tapping it switches back.
+ *
+ * ### Avro-style shift (session 3)
+ * The layout supports three shift layers, mirroring English:
+ *  - [KeyboardMode.BENGALI_BANGLISH]        — lowercase Latin keys.
+ *  - [KeyboardMode.BENGALI_BANGLISH_UPPER]  — uppercase Latin keys (one-shot).
+ *  - [KeyboardMode.BENGALI_BANGLISH_CAPS]   — uppercase Latin keys (latched).
+ *
+ * Uppercase keys feed the transliteration engine uppercase input, which the
+ * rule table already maps to Avro's retroflex / long-vowel forms
+ * (`T`→ট, `D`→ড, `N`→ণ, `R`→ড়, `Sh`→ষ, `A`→আ, `I`→ঈ, `U`→ঊ, `E`→এ, `O`→ও).
+ * The IME's one-shot decay (afterCharCommit) returns to lowercase after a
+ * single char, matching Avro's typical shift-tap usage.
  */
 public object BengaliBanglish {
 
     public fun layoutFor(mode: KeyboardMode): KeyboardLayout? {
-        if (mode != KeyboardMode.BENGALI_BANGLISH) return null
-        // Bengali mode always uses lowercase Latin. Shift is not meaningful
-        // here — capital letters can produce retroflex consonants (T, D)
-        // in Avro conventions, but for M2 we keep shift disabled to avoid
-        // confusion for elderly users. Revisit at M2C.
+        if (!mode.isBengaliBanglish) return null
         val base = EnglishQwerty.build(
-            shifted = false,
+            shifted = mode.isShifted,
             langToggleLabel = EnglishQwerty.LABEL_TO_ENGLISH,
         )
-        return KeyboardLayout(id = "bn_banglish", rows = base.rows)
+        return KeyboardLayout(id = "bn_banglish_${if (mode.isShifted) "upper" else "lower"}", rows = base.rows)
     }
 }

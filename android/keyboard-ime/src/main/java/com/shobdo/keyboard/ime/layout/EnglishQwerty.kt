@@ -46,7 +46,8 @@ public object EnglishQwerty {
                 Key(SYMBOLS_LABEL, KeyAction.ToggleSymbols, widthWeight = 1.5f),
                 Key(langToggleLabel, KeyAction.ToggleLanguage, widthWeight = 1.2f),
                 Key(GLOBE_LABEL, KeyAction.ShowImePicker, widthWeight = 1.0f),
-                Key(SPACE_LABEL, KeyAction.Space, widthWeight = 4.0f),
+                Key(MIC_LABEL, KeyAction.Voice, widthWeight = 1.0f),
+                Key(SPACE_LABEL, KeyAction.Space, widthWeight = 3.6f),
                 Key(".", KeyAction.Character("."), widthWeight = 1.0f),
                 Key(ENTER_LABEL, KeyAction.Enter, widthWeight = 1.8f),
             ),
@@ -76,6 +77,7 @@ public object EnglishQwerty {
     internal const val LABEL_TO_BENGALI = "বাং"
     internal const val LABEL_TO_ENGLISH = "En"
     internal const val GLOBE_LABEL = "\uD83C\uDF10" // 🌐
+    internal const val MIC_LABEL = "\uD83C\uDF99" // 🎙️
     internal const val SPACE_LABEL = " "
     internal const val ENTER_LABEL = "↵"
 
