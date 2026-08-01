@@ -1,0 +1,53 @@
+# Android / Gradle
+android/.gradle/
+android/build/
+android/**/build/
+android/.idea/
+android/local.properties
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.iml
+*.hprof
+
+# APK / AAR / keystore
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.jks
+*.keystore
+release/
+debug/
+
+# Kotlin
+.kotlin/
+
+# IDEs
+.idea/
+*.iws
+*.ipr
+.vscode/
+*.swp
+
+# macOS / Windows / Linux
+.DS_Store
+Thumbs.db
+
+# Python / backend
+backend/.venv/
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.egg-info/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/.env
+backend/.env.local
+
+# Logs & temp
+*.log
+tmp/
+temp/

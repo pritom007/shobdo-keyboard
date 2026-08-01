@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Minimal splash / window theme. The actual UI is fully rendered by Compose
+  via `setContent {}`, so this theme only exists to control the window chrome
+  before Compose takes over. Uses framework-provided attributes only so we
+  don't need the Material Components for Android library as a dependency.
+-->
+<resources>
+    <style name="Theme.Shobdo" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
