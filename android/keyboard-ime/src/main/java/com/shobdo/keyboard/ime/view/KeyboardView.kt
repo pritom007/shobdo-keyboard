@@ -23,6 +23,7 @@ import com.shobdo.keyboard.ime.layout.KeyboardLayout
 import com.shobdo.keyboard.ime.layout.SymbolsLayout
 import com.shobdo.keyboard.ime.privacy.InputPrivacyMode
 import com.shobdo.keyboard.ime.state.KeyboardMode
+import com.shobdo.keyboard.ime.voice.VoiceStrings
 import com.shobdo.keyboard.translit.Candidate
 
 /**
@@ -45,12 +46,18 @@ internal class KeyboardView(
     private val rowsContainer: LinearLayout
     private val banner: TextView
     private val candidateStrip: CandidateStripView
+    private val voicePanel: VoicePanelView
 
     private var currentMode: KeyboardMode = KeyboardMode.ENGLISH_LOWER
     private var privacyMode: InputPrivacyMode = InputPrivacyMode.NORMAL
 
     private var extraBottomGapPx: Int = 0
     private var systemBottomInsetPx: Int = 0
+
+    /** Voice panel callbacks. Wired by the IME service. */
+    var onVoiceStop: (() -> Unit)? = null
+    var onVoiceCancel: (() -> Unit)? = null
+    var onVoiceRetry: (() -> Unit)? = null
 
     init {
         orientation = VERTICAL
@@ -83,6 +90,16 @@ internal class KeyboardView(
         }
         addView(rowsContainer, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
+        // 3b. Voice panel — hidden by default; shown when the user taps the mic.
+        voicePanel = VoicePanelView(
+            context = context,
+            onStop = { onVoiceStop?.invoke() },
+            onCancel = { onVoiceCancel?.invoke() },
+            onRetry = { onVoiceRetry?.invoke() },
+        )
+        voicePanel.visibility = View.GONE
+        addView(voicePanel, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+
         // 4. Navigation-bar / gesture inset applied as bottom padding on the
         //    root so no key is hidden under gesture-nav on Android 10+.
         ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
@@ -101,7 +118,7 @@ internal class KeyboardView(
         currentMode = mode
         // Clear the candidate strip when leaving Banglish; the service is also
         // responsible for finishing any active composition.
-        if (mode != KeyboardMode.BENGALI_BANGLISH) {
+        if (!mode.isBengaliBanglish) {
             candidateStrip.setCandidates(emptyList())
         }
         render()
@@ -116,6 +133,41 @@ internal class KeyboardView(
     /** Update the candidate strip contents. */
     fun setCandidates(candidates: List<Candidate>) {
         candidateStrip.setCandidates(candidates)
+    }
+
+    /** Show the voice listening panel, hiding the normal keyboard rows. */
+    fun showVoicePanel() {
+        banner.visibility = View.GONE
+        candidateStrip.visibility = View.GONE
+        rowsContainer.visibility = View.GONE
+        voicePanel.visibility = View.VISIBLE
+        voicePanel.showListening()
+    }
+
+    /** Update the voice panel's listening timer (ms). */
+    fun setVoiceTimerMs(ms: Long) {
+        voicePanel.setTimerMs(ms)
+    }
+
+    /** Switch the voice panel to the processing ("লিখছি…") state, or pass a
+     *  custom [message] for the offline-fallback case. */
+    fun showVoiceProcessing(message: String = VoiceStrings.PROCESSING) {
+        voicePanel.showProcessing(message)
+    }
+
+    /** Switch the voice panel to an error state with a Bengali message. */
+    fun showVoiceError(message: String) {
+        voicePanel.showError(message)
+    }
+
+    /** Hide the voice panel and restore the normal keyboard. */
+    fun hideVoicePanel() {
+        voicePanel.visibility = View.GONE
+        rowsContainer.visibility = View.VISIBLE
+        // Restore banner / candidate strip visibility per current mode.
+        banner.visibility = if (privacyMode == InputPrivacyMode.SENSITIVE) View.VISIBLE else View.GONE
+        candidateStrip.visibility =
+            if (currentMode.isBengaliBanglish) View.VISIBLE else View.GONE
     }
 
     fun setExtraBottomGapDp(gapDp: Int) {
@@ -144,7 +196,7 @@ internal class KeyboardView(
         }
 
         candidateStrip.visibility =
-            if (currentMode == KeyboardMode.BENGALI_BANGLISH) View.VISIBLE else View.GONE
+            if (currentMode.isBengaliBanglish) View.VISIBLE else View.GONE
 
         rowsContainer.removeAllViews()
 
@@ -156,9 +208,14 @@ internal class KeyboardView(
 
             KeyboardMode.SYMBOLS_PAGE1,
             KeyboardMode.SYMBOLS_PAGE2,
+            KeyboardMode.SYMBOLS_PAGE1_BN,
+            KeyboardMode.SYMBOLS_PAGE2_BN,
             -> SymbolsLayout.layoutFor(currentMode)!!
 
-            KeyboardMode.BENGALI_BANGLISH -> BengaliBanglish.layoutFor(currentMode)!!
+            KeyboardMode.BENGALI_BANGLISH,
+            KeyboardMode.BENGALI_BANGLISH_UPPER,
+            KeyboardMode.BENGALI_BANGLISH_CAPS,
+            -> BengaliBanglish.layoutFor(currentMode)!!
         }
 
         for (row in layout.rows) {

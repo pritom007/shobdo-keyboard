@@ -16,4 +16,12 @@
     <string name="setup_step2_button">কিবোর্ড বেছে নিন</string>
 
     <string name="setup_footer_note">যেকোনো সময় অন্য কিবোর্ডে ফিরে যেতে পারবেন।</string>
+
+    <!-- Voice entry point from setup -->
+    <string name="setup_voice_title">ভয়েস চেষ্টা করুন</string>
+    <string name="setup_voice_body">মাইকে কথা বলে লেখা তৈরি করে দেখুন।</string>
+    <string name="setup_voice_button">ভয়েস চেষ্টা করুন</string>
+
+    <!-- Voice screen -->
+    <string name="voice_title">শব্দ ভয়েস</string>
 </resources>

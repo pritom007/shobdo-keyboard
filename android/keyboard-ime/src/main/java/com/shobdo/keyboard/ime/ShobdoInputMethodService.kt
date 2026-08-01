@@ -1,7 +1,10 @@
 package com.shobdo.keyboard.ime
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.inputmethodservice.InputMethodService
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -15,10 +18,23 @@ import com.shobdo.keyboard.ime.privacy.InputPrivacyPolicy
 import com.shobdo.keyboard.ime.state.KeyboardMode
 import com.shobdo.keyboard.ime.state.KeyboardModeTransitions
 import com.shobdo.keyboard.ime.state.LanguagePreference
+import com.shobdo.keyboard.ime.voice.HybridResult
+import com.shobdo.keyboard.ime.voice.HybridSpeechRecognizer
+import com.shobdo.keyboard.ime.voice.VoiceController
+import com.shobdo.keyboard.ime.voice.VoiceStrings
 import com.shobdo.keyboard.ime.view.KeyboardView
+import com.shobdo.keyboard.speech.DeviceIdProvider
+import com.shobdo.keyboard.speech.RemoteSpeechRepository
+import com.shobdo.keyboard.speech.SpeechConfig
+import com.shobdo.keyboard.speech.ondevice.OnDeviceSpeechRecognizer
 import com.shobdo.keyboard.translit.AvroLikeEngine
 import com.shobdo.keyboard.translit.Candidate
 import com.shobdo.keyboard.translit.TransliterationEngine
+import com.shobdo.keyboard.voice.capture.AudioRecordAudioSource
+import com.shobdo.keyboard.voice.capture.AudioRecorder
+import com.shobdo.keyboard.voice.capture.MicPermission
+import com.shobdo.keyboard.voice.capture.RecorderListener
+import com.shobdo.keyboard.voice.capture.Recording
 
 /**
  * The Shobdo Keyboard IME service.
@@ -68,6 +84,20 @@ public class ShobdoInputMethodService : InputMethodService() {
     /** Latin composing buffer, non-empty only when [mode] is BENGALI_BANGLISH. */
     private var composing: String = ""
 
+    // -- Voice (M3B + session 3 hybrid) ----------------------------------------
+    //
+    // Hybrid speech recognition: the server (Groq Whisper large-v3) is the
+    // primary path when online — best Bengali quality and auto-detects
+    // Bengali/English. The on-device Whisper base is the offline fallback
+    // (less accurate, Bengali-only) used when the server is unreachable.
+    // The mic key is hidden in sensitive fields.
+    private val voiceController = VoiceController()
+    private val voiceRecorder = AudioRecorder(sourceProvider = { AudioRecordAudioSource() })
+    private var voiceRecognizer: OnDeviceSpeechRecognizer? = null
+    private var hybridRecognizer: HybridSpeechRecognizer? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var voiceTickSecond = -1L
+
     override fun onCreate() {
         super.onCreate()
         // Restore the user's last language choice as soon as the service
@@ -87,8 +117,158 @@ public class ShobdoInputMethodService : InputMethodService() {
         )
         view.setMode(mode)
         view.setPrivacyMode(privacyMode)
+        // Wire the voice panel's stop/cancel/retry buttons to the controller.
+        view.onVoiceStop = { voiceController.stop() }
+        view.onVoiceCancel = { voiceController.cancel() }
+        view.onVoiceRetry = { voiceController.reset(); voiceController.start() }
         keyboardView = view
+        wireVoiceController()
         return view
+    }
+
+    // -- Voice (M3B) ------------------------------------------------------------
+
+    /**
+     * Connect the [VoiceController] state machine to the panel UI, the
+     * recorder, and the recognizer. Called once per input view creation.
+     */
+    private fun wireVoiceController() {
+        voiceController.onStateChanged = { state ->
+            mainHandler.post { renderVoiceState(state) }
+        }
+        voiceController.onTranscript = { text ->
+            mainHandler.post { commitTranscript(text) }
+        }
+        voiceRecorder.setListener(RecorderListenerImpl())
+    }
+
+    private fun renderVoiceState(state: VoiceController.State) {
+        val view = keyboardView ?: return
+        when (state) {
+            VoiceController.State.IDLE -> {
+                view.hideVoicePanel()
+                if (voiceRecorder.isRecording()) voiceRecorder.cancel()
+            }
+            VoiceController.State.LISTENING -> {
+                view.showVoicePanel()
+                voiceTickSecond = -1L
+                voiceRecorder.start()
+            }
+            VoiceController.State.PROCESSING -> {
+                view.showVoiceProcessing()
+                if (voiceRecorder.isRecording()) voiceRecorder.stop()
+            }
+            VoiceController.State.ERROR -> view.showVoiceError(VoiceStrings.RECOGNITION_ERROR)
+        }
+    }
+
+    private fun commitTranscript(text: String) {
+        val ic = currentInputConnection ?: return
+        // Commit any pending Banglish composition first so voice text
+        // appends cleanly after it rather than replacing it.
+        commitComposingLatinAsIs()
+        ic.commitText(text, 1)
+    }
+
+    private fun handleVoice() {
+        // Never allow voice in sensitive fields (password / PIN / OTP / card).
+        if (privacyMode == InputPrivacyMode.SENSITIVE) return
+
+        // Check mic permission. If denied, show the error panel prompting the
+        // user to grant it; the panel's retry button lets them try again after
+        // granting via system settings.
+        if (!MicPermission.isGranted(this)) {
+            keyboardView?.showVoiceError(VoiceStrings.MIC_PERMISSION_NEEDED)
+            return
+        }
+
+        // Lazily construct the recognizers on first use so the on-device
+        // model loads (~3-4s for base) only when voice is actually invoked,
+        // not at IME startup.
+        ensureVoiceRecognizer()
+
+        voiceController.start()
+    }
+
+    /**
+     * Build the on-device recognizer (offline fallback) and the hybrid
+     * recognizer (online-first, offline-fallback) on first voice use. Safe
+     * to call multiple times; a no-op after the first successful call.
+     */
+    private fun ensureVoiceRecognizer() {
+        if (hybridRecognizer != null) return
+        if (voiceRecognizer == null) {
+            voiceRecognizer = OnDeviceSpeechRecognizer(this)
+        }
+        val remote = RemoteSpeechRepository(
+            config = SpeechConfig(),
+            deviceId = DeviceIdProvider.get(this),
+        )
+        hybridRecognizer = HybridSpeechRecognizer(
+            remote = remote,
+            onDeviceTranscribe = { wav, sr -> voiceRecognizer?.transcribe(wav, sr) ?: "" },
+        )
+    }
+
+    /**
+     * Recorder callback. Runs on the recorder's background thread. Drives
+     * the panel timer (throttled to 1s) and, on completion, runs the
+     * recognizer on a background thread.
+     */
+    private inner class RecorderListenerImpl : RecorderListener {
+        override fun onStateChanged(state: com.shobdo.keyboard.voice.capture.RecorderState) {}
+
+        override fun onTick(elapsedMs: Long) {
+            val second = elapsedMs / 1000L
+            if (second != voiceTickSecond) {
+                voiceTickSecond = second
+                mainHandler.post { keyboardView?.setVoiceTimerMs(elapsedMs) }
+            }
+        }
+
+        override fun onComplete(recording: Recording) {
+            voiceTickSecond = -1L
+            // Run the hybrid recognizer on a background thread. It tries the
+            // server (Groq large-v3) first; on any remote failure it calls
+            // onFallback so we can show the offline message, then runs the
+            // on-device Whisper base. The result is committed on the main
+            // thread via the controller.
+            Thread {
+                try {
+                    val result = hybridRecognizer?.transcribe(
+                        wavBytes = recording.wavBytes,
+                        sampleRate = recording.sampleRate,
+                        language = "",
+                        onFallback = {
+                            mainHandler.post {
+                                keyboardView?.showVoiceProcessing(VoiceStrings.OFFLINE_PROCESSING)
+                            }
+                        },
+                    )
+                    mainHandler.post {
+                        when (result) {
+                            is HybridResult.Online ->
+                                voiceController.onRecognitionResult(result.text)
+                            is HybridResult.OfflineFallback ->
+                                voiceController.onRecognitionResult(result.text)
+                            HybridResult.Failed -> voiceController.onError()
+                            null -> voiceController.onError()
+                        }
+                    }
+                } catch (_: Exception) {
+                    mainHandler.post { voiceController.onError() }
+                }
+            }.start()
+        }
+
+        override fun onCancelled() {
+            voiceTickSecond = -1L
+        }
+
+        override fun onError(code: String) {
+            voiceTickSecond = -1L
+            mainHandler.post { voiceController.onError() }
+        }
     }
 
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
@@ -108,7 +288,7 @@ public class ShobdoInputMethodService : InputMethodService() {
         // We do NOT overwrite the persisted preference here — once the user
         // leaves the sensitive field, we want to return to their chosen
         // language automatically.
-        if (privacyMode == InputPrivacyMode.SENSITIVE && mode == KeyboardMode.BENGALI_BANGLISH) {
+        if (privacyMode == InputPrivacyMode.SENSITIVE && mode.isBengaliBanglish) {
             mode = KeyboardMode.ENGLISH_LOWER
             composing = ""
         }
@@ -118,18 +298,21 @@ public class ShobdoInputMethodService : InputMethodService() {
 
     override fun onFinishInput() {
         super.onFinishInput()
-        // Field is going away — commit whatever we have as a safe default so
-        // no user typing is lost. Then reset transient state.
-        //
-        // IMPORTANT: we deliberately do NOT reset `mode` here. The user's
-        // language choice is persisted via [LanguagePreference] and will
-        // be restored on the next onStartInput. Resetting `mode` here was
-        // the bug that caused "screen lock changes the keyboard back to
-        // English".
+        // Cancel any in-flight voice recording when the field goes away so the
+        // mic is never left on after the user moves focus.
+        if (voiceController.state != VoiceController.State.IDLE) {
+            voiceController.cancel()
+        }
         commitComposingLatinAsIs()
         currentEditorInfo = null
         privacyMode = InputPrivacyMode.NORMAL
         keyboardView?.setPrivacyMode(privacyMode)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        voiceRecognizer?.release()
+        voiceRecognizer = null
     }
 
     // -- Key dispatch -----------------------------------------------------------
@@ -166,15 +349,25 @@ public class ShobdoInputMethodService : InputMethodService() {
                 val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
                 imm?.showInputMethodPicker()
             }
+
+            KeyAction.Voice -> handleVoice()
         }
     }
 
     // -- Character handling -----------------------------------------------------
 
     private fun handleCharacter(ic: InputConnection, text: String) {
-        if (mode == KeyboardMode.BENGALI_BANGLISH && privacyMode != InputPrivacyMode.SENSITIVE) {
+        if (mode.isBengaliBanglish && privacyMode != InputPrivacyMode.SENSITIVE) {
             composing += text
             refreshComposition(ic)
+            // One-shot shift decays after each char (caps stays). Matches
+            // Avro: shift-tap T → ট, then shift auto-releases so the next
+            // letter is lowercase again.
+            val next = KeyboardModeTransitions.afterCharCommit(mode)
+            if (next != mode) {
+                mode = next
+                keyboardView?.setMode(mode)
+            }
             return
         }
         val out = if (mode.isShifted) text.uppercase() else text
@@ -201,7 +394,7 @@ public class ShobdoInputMethodService : InputMethodService() {
     // -- Backspace --------------------------------------------------------------
 
     private fun handleBackspace(ic: InputConnection) {
-        if (mode == KeyboardMode.BENGALI_BANGLISH && composing.isNotEmpty()) {
+        if (mode.isBengaliBanglish && composing.isNotEmpty()) {
             composing = composing.dropLast(1)
             refreshComposition(ic)
             return
@@ -214,7 +407,7 @@ public class ShobdoInputMethodService : InputMethodService() {
     // -- Space / Enter (commit top candidate) -----------------------------------
 
     private fun handleSpaceOrEnter(ic: InputConnection, terminator: String, isEnter: Boolean) {
-        if (mode == KeyboardMode.BENGALI_BANGLISH && composing.isNotEmpty()) {
+        if (mode.isBengaliBanglish && composing.isNotEmpty()) {
             val cands = engine.transliterate(composing, maxCandidates = 5)
             val topBengali = cands.firstOrNull()?.bengali ?: composing
             engine.onUserSelection(composing, topBengali)
@@ -266,7 +459,7 @@ public class ShobdoInputMethodService : InputMethodService() {
         // Refuse to enter Banglish mode in sensitive fields.
         val proposedNext = KeyboardModeTransitions.onLanguageToggle(mode)
         val safeNext =
-            if (proposedNext == KeyboardMode.BENGALI_BANGLISH &&
+            if (proposedNext.isBengaliBanglish &&
                 privacyMode == InputPrivacyMode.SENSITIVE
             ) {
                 KeyboardMode.ENGLISH_LOWER

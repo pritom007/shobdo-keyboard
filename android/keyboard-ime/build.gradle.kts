@@ -37,6 +37,9 @@ android {
 
 dependencies {
     implementation(project(":transliteration"))
+    implementation(project(":voice-capture"))
+    implementation(project(":speech-ondevice"))
+    implementation(project(":speech"))
 
     implementation(libs.kotlin.stdlib)
     implementation(libs.androidx.core.ktx)

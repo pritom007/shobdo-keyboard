@@ -29,6 +29,9 @@ public sealed interface KeyAction {
 
     /** Show the Android IME picker (globe key). */
     public data object ShowImePicker : KeyAction
+
+    /** Open the voice listening panel (mic key). Hidden in sensitive fields. */
+    public data object Voice : KeyAction
 }
 
 /**

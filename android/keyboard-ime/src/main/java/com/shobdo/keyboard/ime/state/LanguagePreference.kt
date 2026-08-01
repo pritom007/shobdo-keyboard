@@ -56,11 +56,13 @@ public class LanguagePreference(context: Context) {
 
     /**
      * Reduce any mode to a language mode: English variants collapse to
-     * [KeyboardMode.ENGLISH_LOWER]; Symbols default to English (since we
-     * don't have a "last language before symbols" recall); Bengali stays.
+     * [KeyboardMode.ENGLISH_LOWER]; Bengali variants (Banglish lower/upper/
+     * caps and the Bengali symbols pages) collapse to
+     * [KeyboardMode.BENGALI_BANGLISH]; English symbols collapse to English.
      */
     private fun KeyboardMode.normalizeToLanguage(): KeyboardMode = when {
-        this == KeyboardMode.BENGALI_BANGLISH -> KeyboardMode.BENGALI_BANGLISH
+        this.isBengaliBanglish -> KeyboardMode.BENGALI_BANGLISH
+        this.isBengaliSymbols -> KeyboardMode.BENGALI_BANGLISH
         this.isEnglish -> KeyboardMode.ENGLISH_LOWER
         this.isSymbols -> KeyboardMode.ENGLISH_LOWER
         else -> KeyboardMode.ENGLISH_LOWER
