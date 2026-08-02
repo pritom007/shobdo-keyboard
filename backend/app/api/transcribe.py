@@ -24,13 +24,15 @@ Contract (stable across backend rewrites; the Android client depends on it):
 
 from __future__ import annotations
 
+import hmac
 import struct
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Request, UploadFile, status
+from starlette.concurrency import run_in_threadpool
 
 from ..providers.speech import SpeechProvider
-from ..security import InMemoryRateLimiter, ProviderError, RateLimiter
+from ..security import InMemoryRateLimiter, ProviderError, RateLimiter, rate_limit_key
 from ..settings import settings
 
 router = APIRouter(tags=["transcribe"])
@@ -43,7 +45,8 @@ def _require_secret(
 ) -> None:
     if not settings.shobdo_shared_secret:
         return
-    if x_shobdo_secret != settings.shobdo_shared_secret:
+    supplied = x_shobdo_secret or ""
+    if not hmac.compare_digest(supplied, settings.shobdo_shared_secret):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error": {"code": "UNAUTHORIZED"}},
@@ -78,7 +81,10 @@ _default_provider: SpeechProvider | None = None
 def get_rate_limiter() -> RateLimiter:
     global _default_rate_limiter
     if _default_rate_limiter is None:
-        _default_rate_limiter = InMemoryRateLimiter(settings.rate_limit_per_minute)
+        _default_rate_limiter = InMemoryRateLimiter(
+            settings.rate_limit_per_minute,
+            settings.rate_limit_max_clients,
+        )
     return _default_rate_limiter
 
 
@@ -90,6 +96,7 @@ _default_rate_limiter: RateLimiter | None = None
 
 @router.post("/v1/transcriptions")
 async def transcribe(
+    request: Request,
     audio: UploadFile = File(...),
     language: str = "bn",
     x_device_id: Optional[str] = Header(default=None, alias="X-Device-Id"),
@@ -97,13 +104,18 @@ async def transcribe(
     limiter: RateLimiter = Depends(get_rate_limiter),
     _auth: None = Depends(_require_secret),
 ) -> dict:
-    device_id = (x_device_id or "").strip() or "anonymous"
-
     # Rate-limit before reading the body — cheapest abuse guard.
-    if not limiter.check(device_id):
+    client_host = request.client.host if request.client else None
+    if not limiter.check(rate_limit_key(client_host, x_device_id)):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={"error": {"code": "RATE_LIMIT"}},
+        )
+
+    if audio.content_type not in {"audio/wav", "audio/x-wav", "application/octet-stream"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": {"code": "BAD_AUDIO"}},
         )
 
     raw = await _read_bounded(audio, settings.max_audio_bytes)
@@ -127,7 +139,8 @@ async def transcribe(
         )
 
     try:
-        text = provider.transcribe(
+        text = await run_in_threadpool(
+            provider.transcribe,
             audio_bytes=raw,
             filename=audio.filename or "audio.wav",
             language=language or None,
@@ -184,9 +197,23 @@ def _wav_duration_ms(raw: bytes) -> int | None:
         if raw[12:16] != b"fmt ":
             return None
         fmt_size = struct.unpack_from("<I", raw, 16)[0]
+        if fmt_size < 16 or 20 + fmt_size > len(raw):
+            return None
+        audio_format = struct.unpack_from("<H", raw, 20)[0]
         channels = struct.unpack_from("<H", raw, 22)[0]
         sample_rate = struct.unpack_from("<I", raw, 24)[0]
-        if channels == 0 or sample_rate == 0:
+        byte_rate = struct.unpack_from("<I", raw, 28)[0]
+        block_align = struct.unpack_from("<H", raw, 32)[0]
+        bits_per_sample = struct.unpack_from("<H", raw, 34)[0]
+        if (
+            audio_format != 1
+            or channels not in {1, 2}
+            or sample_rate < 8_000
+            or sample_rate > 192_000
+            or bits_per_sample != 16
+            or block_align != channels * 2
+            or byte_rate != sample_rate * block_align
+        ):
             return None
 
         # Walk subsequent chunks to find "data".
@@ -195,6 +222,9 @@ def _wav_duration_ms(raw: bytes) -> int | None:
         while idx + 8 <= len(raw):
             chunk_id = raw[idx : idx + 4]
             chunk_size = struct.unpack_from("<I", raw, idx + 4)[0]
+            chunk_end = idx + 8 + chunk_size
+            if chunk_end > len(raw):
+                return None
             if chunk_id == b"data":
                 data_size = chunk_size
                 break
@@ -203,9 +233,7 @@ def _wav_duration_ms(raw: bytes) -> int | None:
         if data_size is None:
             return None
 
-        # 16-bit PCM assumed (2 bytes/sample). Mono/stereo handled by channels.
-        bytes_per_sample_frame = channels * 2
-        seconds = data_size / (sample_rate * bytes_per_sample_frame)
+        seconds = data_size / byte_rate
         return int(seconds * 1000)
     except (struct.error, IndexError):
         return None

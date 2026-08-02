@@ -11,6 +11,7 @@ def test_health_ok():
     assert body["status"] == "ok"
     assert body["service"] == "shobdo-backend"
     assert "version" in body
+    assert resp.headers["cache-control"] == "no-store"
 
 
 def test_root_lists_service():

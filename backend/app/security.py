@@ -9,6 +9,7 @@ swap `InMemoryRateLimiter` for a Redis-backed implementation behind the same
 from __future__ import annotations
 
 import time
+from hashlib import sha256
 from threading import Lock
 from typing import Protocol
 
@@ -34,8 +35,9 @@ class InMemoryRateLimiter:
     limiter implementing the same `RateLimiter` protocol.
     """
 
-    def __init__(self, per_minute: int) -> None:
+    def __init__(self, per_minute: int, max_clients: int = 10_000) -> None:
         self._per_minute = max(1, per_minute)
+        self._max_clients = max(100, max_clients)
         self._window = 60.0
         self._hits: dict[str, list[float]] = {}
         self._lock = Lock()
@@ -44,6 +46,14 @@ class InMemoryRateLimiter:
         now = time.monotonic()
         cutoff = now - self._window
         with self._lock:
+            # Bound attacker-controlled cardinality and discard inactive keys.
+            if len(self._hits) >= self._max_clients and device_id not in self._hits:
+                self._hits = {
+                    key: hits for key, hits in self._hits.items()
+                    if hits and hits[-1] >= cutoff
+                }
+                if len(self._hits) >= self._max_clients:
+                    return False
             bucket = [t for t in self._hits.get(device_id, ()) if t >= cutoff]
             if len(bucket) >= self._per_minute:
                 self._hits[device_id] = bucket
@@ -51,6 +61,20 @@ class InMemoryRateLimiter:
             bucket.append(now)
             self._hits[device_id] = bucket
             return True
+
+
+def rate_limit_key(client_host: str | None, device_id: str | None) -> str:
+    """Return a fixed-size, non-identifying key for abuse prevention.
+
+    The install ID is client supplied, so it is never trusted as authentication.
+    Including the source address makes trivial ID rotation less effective, while
+    hashing avoids retaining either value in process memory.
+    """
+    host = (client_host or "unknown").strip()[:255]
+    install_id = (device_id or "anonymous").strip()
+    if not install_id or len(install_id) > 128 or not install_id.isascii():
+        install_id = "anonymous"
+    return sha256(f"{host}\0{install_id}".encode("utf-8")).hexdigest()
 
 
 class ProviderError(Exception):

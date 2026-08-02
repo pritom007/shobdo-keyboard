@@ -1,8 +1,7 @@
 # Backend API
 
-The backend is not yet implemented (skeleton only at M0). This document
-freezes the initial contracts so the Android side can code against stable
-DTOs at M2.
+The transcription endpoint is implemented. Rewrite and revision endpoints in
+this document are forward-looking contracts and are not available yet.
 
 ## Base URL
 
@@ -10,35 +9,30 @@ TBD per deployment. During development: `http://localhost:8000`.
 
 ## Authentication
 
-M2: shared secret header `X-Shobdo-Auth: <token>`. Rotated out-of-band.
-M4+: per-install token issued once during onboarding, stored in the Android
-Keystore, sent as a bearer.
+The prototype backend supports `X-Shobdo-Secret` when configured. This must not
+be embedded in a publicly distributed APK because application secrets are
+extractable. Production distribution requires short-lived per-install
+credentials or platform attestation at the API gateway.
 
-Every request must also carry:
-
-- `X-Request-Id: <uuid v4>` — client-generated, never contains PII.
-- `X-Client-Version: <appVersionName>+<versionCode>`.
+Transcription requests carry `X-Device-Id`, an opaque install-local value used
+only as one input to coarse abuse prevention. It is not trusted as identity.
 
 ## Common error envelope
 
 ```json
 {
   "error": {
-    "code": "PROVIDER_TIMEOUT",
-    "message_bn": "কথাটি বুঝতে একটু সমস্যা হয়েছে। আবার চেষ্টা করুন।",
-    "retryable": true
+    "code": "PROVIDER_TIMEOUT"
   }
 }
 ```
 
-Error codes (initial):
+Implemented transcription codes are `NO_AUDIO`, `BAD_AUDIO`, `TOO_LARGE`,
+`TOO_LONG`, `RATE_LIMIT`, `UNAUTHORIZED`, `PROVIDER_NOT_CONFIGURED`,
+`PROVIDER_TIMEOUT`, `PROVIDER_RATE_LIMIT`, and `PROVIDER_ERROR`.
 
-- `INVALID_REQUEST`, `UNAUTHORIZED`, `RATE_LIMITED`
-- `AUDIO_TOO_LARGE`, `AUDIO_TOO_LONG`, `AUDIO_UNSUPPORTED_FORMAT`
-- `PROVIDER_TIMEOUT`, `PROVIDER_UNAVAILABLE`, `PROVIDER_MALFORMED_RESPONSE`
-- `MEANING_UNCERTAIN` (needs clarification), `SAFETY_BLOCKED`
-
-`message_bn` is always safe to display directly to the user.
+The client maps stable codes to local Bengali messages. The server does not
+return provider exception text to the user.
 
 ## Endpoints
 
@@ -46,14 +40,14 @@ Error codes (initial):
 
 Liveness probe. Returns `{"status":"ok"}`. No auth required.
 
-### `POST /v1/transcriptions`  *(M2)*
+### `POST /v1/transcriptions`
 
 Multipart:
 
-- `audio` — WAV, mono, 16 kHz PCM, ≤ 60 s, ≤ 2 MB.
-- `language` — `bn` or `en`.
-- `hints` — optional JSON array of up to 20 short strings (names,
-  place names) to bias recognition. **Not** the full personal dictionary.
+- `audio` — 16-bit PCM WAV, one or two channels, ≤ 60 s, ≤ 2 MB. The Android
+  client records 16 kHz mono.
+- `language` — optional language hint; defaults to `bn`. An empty value lets a
+  compatible provider auto-detect.
 
 Response:
 
@@ -61,19 +55,11 @@ Response:
 {
   "text": "আমি শুক্রবার বিকেল চারটায় আসব",
   "language": "bn",
-  "confidence": 0.87,
-  "segments": [
-    {"start_ms": 0,    "end_ms": 1600, "text": "আমি"},
-    {"start_ms": 1600, "end_ms": 3400, "text": "শুক্রবার বিকেল"}
-  ],
-  "uncertain_segments": [],
-  "provider": "groq",
-  "model": "whisper-large-v3"
+  "duration_ms": 4500
 }
 ```
 
-Errors: `AUDIO_TOO_LARGE`, `AUDIO_TOO_LONG`, `AUDIO_UNSUPPORTED_FORMAT`,
-`PROVIDER_TIMEOUT`, `PROVIDER_UNAVAILABLE`, `PROVIDER_MALFORMED_RESPONSE`.
+The response deliberately omits provider identity and internal exception text.
 
 ### `POST /v1/messages/rewrite`  *(M3)*
 
@@ -138,9 +124,9 @@ unless a strict grammatical adjustment is required.
 
 ## Rate limits
 
-Per-install token: 60 requests / minute across all endpoints. `429` returns
-the standard error envelope with `retryable: true` and a
-`Retry-After` header.
+The prototype defaults to 20 requests per minute per hashed source/install
+key. The in-memory limiter is bounded but process-local; production scale needs
+a distributed limiter at the gateway.
 
 ## Size and duration limits
 

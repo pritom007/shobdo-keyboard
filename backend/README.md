@@ -17,7 +17,7 @@ whisper.cpp without updating the app.
 
 ## Stack
 
-- Python 3.11+, FastAPI, Pydantic v2
+- Python 3.10+, FastAPI, Pydantic v2
 - `openai` SDK (OpenAI-compatible — works against Groq, OpenAI, DeepSeek,
   Together, vLLM, LM Studio, Ollama)
 - pytest + httpx for tests
@@ -52,8 +52,9 @@ Liveness probe. `{ "status": "ok", "service": "shobdo-backend", "version": "..."
 - **Request:** `multipart/form-data`
   - `audio` — WAV file (16 kHz mono 16-bit PCM preferred)
   - `language` — optional ISO 639-1 code, default `bn` (Bengali first)
-- **Header:** `X-Device-Id` — opaque install-local ID, used ONLY for rate
-  limiting. No accounts, no tracking.
+- **Header:** `X-Device-Id` — opaque install-local ID used with the source
+  address for coarse abuse prevention. It is hashed in memory and is not an
+  authentication credential.
 - **200:** `{ "text": "...", "language": "bn", "duration_ms": 4500 }`
 - **Errors** carry a stable `code` the Android client maps to a Bengali
   message:
@@ -64,7 +65,7 @@ Liveness probe. `{ "status": "ok", "service": "shobdo-backend", "version": "..."
   | 400 | `BAD_AUDIO` | not a parseable WAV |
   | 413 | `TOO_LARGE` | exceeds `MAX_AUDIO_BYTES` |
   | 413 | `TOO_LONG` | exceeds `MAX_AUDIO_SECONDS` |
-  | 429 | `RATE_LIMIT` | per-device rate exceeded |
+  | 429 | `RATE_LIMIT` | request-rate budget exceeded |
   | 401 | `UNAUTHORIZED` | shared-secret mismatch (when configured) |
   | 502/503/504 | `PROVIDER_*` | upstream speech-provider failure |
 
@@ -76,11 +77,13 @@ Liveness probe. `{ "status": "ok", "service": "shobdo-backend", "version": "..."
    the provider and dropped; the response is returned and dropped.
 3. **Provider keys live only here**, never in the Android APK.
 4. **Strict request-size and duration limits** (env-configurable).
+5. **Production fails closed.** `ENVIRONMENT=production` requires a provider
+   key and client-auth secret and rejects wildcard CORS.
 
 ## Scaling plan (the "100k users" path — app doesn't change)
 
-1. **Now (v1):** one process, in-memory rate limit, no DB. Handles hundreds
-   of concurrent users per instance. Deploy on Fly.io / Render free tier.
+1. **Now (v1):** one process, bounded in-memory rate limit, no DB. Suitable
+   for controlled prototype traffic behind HTTPS.
 2. **Growing:** run 2+ instances behind a load balancer; swap
    `InMemoryRateLimiter` for a Redis-backed `RateLimiter` (one file changes;
    the protocol and endpoint are untouched).
@@ -97,7 +100,7 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 cp .env.example .env
-# fill in OPENAI_API_KEY (Groq key from https://console.groq.com)
+# Set OPENAI_API_KEY locally. Never paste the value into source or docs.
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -118,6 +121,12 @@ counter.
 docker build -t shobdo-backend ./backend
 docker run -p 8000:8000 --env-file backend/.env shobdo-backend
 ```
+
+For deployment, set `ENVIRONMENT=production`, use HTTPS, configure
+`SHOBDO_SHARED_SECRET`, and restrict network access at a gateway. A static
+secret embedded in a public APK can be extracted, so it is only a prototype
+control; production distribution needs short-lived per-install credentials or
+platform attestation.
 
 ## See also
 

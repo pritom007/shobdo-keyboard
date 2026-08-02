@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 from app.api.transcribe import get_rate_limiter
 from app.main import app
 from app.security import ProviderError
+from app.settings import settings
 from tests.conftest import CountingRateLimiter, make_client, make_wav
 
 
@@ -53,13 +54,43 @@ def test_transcribe_default_language_is_bengali(client, fake_provider):
 def test_transcribe_no_audio(client):
     resp = _post(client, b"")
     assert resp.status_code == 400
-    assert resp.json()["detail"]["error"]["code"] == "NO_AUDIO"
+    assert resp.json()["error"]["code"] == "NO_AUDIO"
 
 
 def test_transcribe_bad_audio_not_wav(client):
     resp = _post(client, b"this is not a wav file at all")
     assert resp.status_code == 400
-    assert resp.json()["detail"]["error"]["code"] == "BAD_AUDIO"
+    assert resp.json()["error"]["code"] == "BAD_AUDIO"
+
+
+def test_transcribe_rejects_unexpected_content_type(client):
+    response = client.post(
+        "/v1/transcriptions",
+        files={"audio": ("audio.txt", make_wav(), "text/plain")},
+        headers={"X-Device-Id": "dev1"},
+    )
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "BAD_AUDIO"
+
+
+def test_transcribe_rejects_missing_configured_secret(client, monkeypatch):
+    monkeypatch.setattr(settings, "shobdo_shared_secret", "configured-for-test")
+    resp = _post(client, make_wav(duration_ms=100))
+    assert resp.status_code == 401
+    assert resp.json()["error"]["code"] == "UNAUTHORIZED"
+
+
+def test_transcribe_accepts_matching_configured_secret(client, monkeypatch):
+    monkeypatch.setattr(settings, "shobdo_shared_secret", "configured-for-test")
+    resp = client.post(
+        "/v1/transcriptions",
+        files={"audio": ("audio.wav", make_wav(duration_ms=100), "audio/wav")},
+        headers={
+            "X-Device-Id": "dev1",
+            "X-Shobdo-Secret": "configured-for-test",
+        },
+    )
+    assert resp.status_code == 200
 
 
 def test_transcribe_too_long(client):
@@ -68,7 +99,7 @@ def test_transcribe_too_long(client):
     assert len(wav) < 2_097_152  # sanity: it's the duration, not size, that trips
     resp = _post(client, wav)
     assert resp.status_code == 413
-    assert resp.json()["detail"]["error"]["code"] == "TOO_LONG"
+    assert resp.json()["error"]["code"] == "TOO_LONG"
 
 
 def test_transcribe_too_large(client):
@@ -76,7 +107,7 @@ def test_transcribe_too_large(client):
     big = b"\x00" * (2_097_152 + 1024)
     resp = _post(client, big)
     assert resp.status_code == 413
-    assert resp.json()["detail"]["error"]["code"] == "TOO_LARGE"
+    assert resp.json()["error"]["code"] == "TOO_LARGE"
 
 
 def test_transcribe_rate_limited(fake_provider):
@@ -89,7 +120,7 @@ def test_transcribe_rate_limited(fake_provider):
         second = _post(client, wav)
         assert first.status_code == 200
         assert second.status_code == 429
-        assert second.json()["detail"]["error"]["code"] == "RATE_LIMIT"
+        assert second.json()["error"]["code"] == "RATE_LIMIT"
         assert limiter.allowed == 1
         assert limiter.refused == 1
     finally:
@@ -124,7 +155,7 @@ def test_transcribe_provider_error_status_mapping(client, fake_provider, exc):
     fake_provider.error = exc
     resp = _post(client, make_wav(duration_ms=500))
     assert resp.status_code == exc.status
-    assert resp.json()["detail"]["error"]["code"] == exc.code
+    assert resp.json()["error"]["code"] == exc.code
 
 
 def test_transcribe_wav_with_extra_junk_chunk_still_parses(client, fake_provider):
@@ -151,3 +182,27 @@ def test_transcribe_stereo_wav_duration(client, fake_provider):
     resp = _post(client, body)
     assert resp.status_code == 200
     assert resp.json()["duration_ms"] == 500
+
+
+def test_transcribe_rejects_truncated_data_chunk(client):
+    wav = bytearray(make_wav(duration_ms=100))
+    data_size_offset = wav.index(b"data") + 4
+    struct.pack_into("<I", wav, data_size_offset, 1_000_000)
+    resp = _post(client, bytes(wav))
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "BAD_AUDIO"
+
+
+def test_transcribe_rejects_non_pcm_wav(client):
+    wav = bytearray(make_wav(duration_ms=100))
+    struct.pack_into("<H", wav, 20, 3)  # IEEE float, not PCM
+    resp = _post(client, bytes(wav))
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "BAD_AUDIO"
+
+
+def test_security_headers_disable_sniffing_and_storage(client):
+    resp = _post(client, make_wav(duration_ms=100))
+    assert resp.headers["x-content-type-options"] == "nosniff"
+    assert resp.headers["cache-control"] == "no-store"
+    assert resp.headers["referrer-policy"] == "no-referrer"
