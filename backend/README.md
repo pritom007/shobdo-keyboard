@@ -128,6 +128,26 @@ secret embedded in a public APK can be extracted, so it is only a prototype
 control; production distribution needs short-lived per-install credentials or
 platform attestation.
 
+## Render deployment
+
+The repository root contains `render.yaml`, a backend-only Render Blueprint.
+It configures a free Python service in Singapore with:
+
+- `backend/` as the service root directory
+- automatic deployment only after GitHub checks pass
+- `/health` deployment health checks
+- a generated backend authentication secret
+- a dashboard-supplied provider key (`OPENAI_API_KEY`)
+- build filtering so Android-only changes do not redeploy the backend
+
+Create the service from the Blueprint and enter `OPENAI_API_KEY` directly in
+Render when prompted. Never put its value in Git, CI configuration, issues, or
+chat. Subsequent backend commits deploy automatically after CI succeeds.
+
+The generated `SHOBDO_SHARED_SECRET` deliberately is not embedded in Android.
+Until the client has short-lived authentication, production transcription calls
+will receive `401`; this is a secure fail-closed state, not a deployment error.
+
 ## See also
 
 - [`../docs/privacy-model.md`](../docs/privacy-model.md)
