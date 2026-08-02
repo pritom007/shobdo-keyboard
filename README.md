@@ -1,5 +1,9 @@
 # Shobdo Keyboard — শব্দ কিবোর্ড
 
+<p align="center">
+  <img src="branding/shobdo-logo.png" width="180" alt="Shobdo Keyboard logo">
+</p>
+
 A patient Bengali & English Android keyboard for elderly users. Type Bengali
 phonetically (Banglish), tap the 🎙️ mic key to **speak** and let the keyboard
 transcribe it, and get safe, private typing — sensitive fields never touch
@@ -36,8 +40,13 @@ the cloud.
 
 ## Download the APK
 
-Pre-built APKs are published on the **[GitHub Releases page](../../releases)**.
-Each version (`v0.1.0`, `v0.2.0`, …) gets its own release with the APK attached.
+Every successful push—including every merge to `master`—publishes installable
+APKs in that CI run's **Artifacts** section for 30 days. Open the latest
+successful **[CI workflow run](../../actions/workflows/ci.yml?query=branch%3Amaster)**
+and download the `shobdo-keyboard-apks-*` artifact.
+
+Versioned builds are also published permanently on the
+**[GitHub Releases page](../../releases)** when a `v*` tag is pushed.
 
 To install on a phone:
 1. Download the APK for your device — **`arm64-v8a`** for nearly all modern

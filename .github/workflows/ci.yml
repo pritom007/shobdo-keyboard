@@ -75,6 +75,16 @@ jobs:
                    :speech-ondevice:testDebugUnitTest \
                    --console=plain --stacktrace
 
+      # Every successful push, including merges to master, leaves installable
+      # APKs on the workflow run's Artifacts section for 30 days.
+      - name: Upload installable APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: shobdo-keyboard-apks-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Upload build outputs (APK + test reports) on failure
         if: failure()
         uses: actions/upload-artifact@v4
