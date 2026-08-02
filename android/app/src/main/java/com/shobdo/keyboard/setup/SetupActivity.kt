@@ -7,8 +7,7 @@ import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -16,23 +15,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -93,9 +90,17 @@ class SetupActivity : ComponentActivity() {
 
 @Composable
 private fun ShobdoTheme(content: @Composable () -> Unit) {
-    // Static color scheme for M1. Dynamic color evaluated at M6 (accessibility pass).
     MaterialTheme(
-        colorScheme = lightColorScheme(),
+        colorScheme = lightColorScheme(
+            primary = Color(0xFF0B5D61),
+            onPrimary = Color.White,
+            secondary = Color(0xFFE7A21A),
+            background = Color(0xFFFFFAF1),
+            surface = Color(0xFFFFFAF1),
+            surfaceVariant = Color(0xFFF1EDE3),
+            onBackground = Color(0xFF17383A),
+            onSurface = Color(0xFF17383A),
+        ),
         typography = MaterialTheme.typography,
         content = content,
     )
@@ -114,6 +119,12 @@ internal fun SetupScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Image(
+            painter = painterResource(R.drawable.shobdo_logo),
+            contentDescription = stringResource(R.string.brand_logo_description),
+            modifier = Modifier.size(132.dp),
+        )
+        Spacer(Modifier.height(20.dp))
         Text(
             text = stringResource(R.string.setup_title),
             style = MaterialTheme.typography.headlineMedium,

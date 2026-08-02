@@ -5,6 +5,7 @@
 
     <!-- Setup screen -->
     <string name="setup_title">শব্দ কিবোর্ড সেটআপ</string>
+    <string name="brand_logo_description">শব্দ কিবোর্ডের লোগো</string>
     <string name="setup_subtitle">দুই ধাপে কিবোর্ডটি চালু করুন।</string>
 
     <string name="setup_step1_title">ধাপ ১: কিবোর্ড চালু করুন</string>
