@@ -18,6 +18,13 @@ android/.cxx/
 *.class
 *.jks
 *.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
+keystore.properties
+signing.properties
 release/
 debug/
 
@@ -57,6 +64,13 @@ backend/.mypy_cache/
 backend/.ruff_cache/
 backend/.env
 backend/.env.local
+backend/.env.*
+!backend/.env.example
+
+# Generic local secrets (examples remain tracked explicitly).
+.env
+.env.*
+!.env.example
 
 # Logs & temp
 *.log

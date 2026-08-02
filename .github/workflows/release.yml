@@ -20,16 +20,17 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: write  # needed by softprops/action-gh-release to create the release
-
 jobs:
   release:
     name: Build APK + publish GitHub Release
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: write  # scoped only to the job that creates the release
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
