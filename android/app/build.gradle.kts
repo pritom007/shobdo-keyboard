@@ -3,6 +3,25 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+val signingKeystorePath = providers.environmentVariable("SIGNING_KEYSTORE_PATH").orNull
+val signingKeyAlias = providers.environmentVariable("SIGNING_KEY_ALIAS").orNull
+val signingKeyPassword = providers.environmentVariable("SIGNING_KEY_PASSWORD").orNull
+val signingStorePassword = providers.environmentVariable("SIGNING_STORE_PASSWORD").orNull
+val hasReleaseSigning = listOf(
+    signingKeystorePath,
+    signingKeyAlias,
+    signingKeyPassword,
+    signingStorePassword,
+).all { !it.isNullOrBlank() }
+val releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.contains("Release", ignoreCase = true)
+}
+
+require(!releaseBuildRequested || hasReleaseSigning) {
+    "Release signing is required. Set SIGNING_KEYSTORE_PATH, SIGNING_KEY_ALIAS, " +
+        "SIGNING_KEY_PASSWORD, and SIGNING_STORE_PASSWORD."
+}
+
 android {
     namespace = "com.shobdo.keyboard"
     compileSdk = libs.versions.compile.sdk.get().toInt()
@@ -11,10 +30,26 @@ android {
         applicationId = "com.shobdo.keyboard"
         minSdk = libs.versions.min.sdk.get().toInt()
         targetSdk = libs.versions.target.sdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0-M1"
+        versionCode = providers.environmentVariable("VERSION_CODE").orNull?.toInt() ?: 1
+        versionName = providers.environmentVariable("VERSION_NAME").orNull ?: "0.1.0-M1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(requireNotNull(signingKeystorePath))
+                storePassword = signingStorePassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
+                storeType = "PKCS12"
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
     }
 
     splits {
@@ -33,6 +68,9 @@ android {
 
     buildTypes {
         release {
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
