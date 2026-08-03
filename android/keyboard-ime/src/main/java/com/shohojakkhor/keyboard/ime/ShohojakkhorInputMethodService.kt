@@ -394,12 +394,22 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
     // -- Backspace --------------------------------------------------------------
 
     private fun handleBackspace(ic: InputConnection) {
+        // Selection takes priority over an in-memory Banglish composition. The
+        // user explicitly selected the host field's text, so delete that range
+        // and discard any stale composition state first.
+        BackspaceHandler.deleteSelection(ic)?.let { deleted ->
+            composing = ""
+            keyboardView?.setCandidates(emptyList())
+            if (!deleted) sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+            return
+        }
+
         if (mode.isBengaliBanglish && composing.isNotEmpty()) {
             composing = composing.dropLast(1)
             refreshComposition(ic)
             return
         }
-        if (!ic.deleteSurroundingText(1, 0)) {
+        if (!BackspaceHandler.deleteBeforeCursor(ic)) {
             sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
         }
     }
