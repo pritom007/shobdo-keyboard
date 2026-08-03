@@ -12,7 +12,7 @@ def test_production_requires_provider_key_and_client_auth():
         Settings(
             environment="production",
             openai_api_key="",
-            shobdo_shared_secret="",
+            shohojakkhor_shared_secret="",
         )
 
 
@@ -21,7 +21,7 @@ def test_production_rejects_wildcard_cors():
         Settings(
             environment="production",
             openai_api_key="configured-for-test",
-            shobdo_shared_secret="configured-for-test",
+            shohojakkhor_shared_secret="configured-for-test",
             allowed_origins="*",
         )
 
@@ -30,7 +30,7 @@ def test_production_accepts_closed_cors_configuration():
     configured = Settings(
         environment="production",
         openai_api_key="configured-for-test",
-        shobdo_shared_secret="configured-for-test",
+        shohojakkhor_shared_secret="configured-for-test",
         allowed_origins="",
     )
     assert configured.environment == "production"

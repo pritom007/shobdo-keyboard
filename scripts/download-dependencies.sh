@@ -114,7 +114,7 @@ POM
   echo "✓ sherpa-onnx AAR ready"
 }
 
-echo "Fetching Shobdo Keyboard large dependencies…"
+echo "Fetching Shohojakkhor Keyboard large dependencies…"
 fetch_model
 fetch_aar
 echo ""

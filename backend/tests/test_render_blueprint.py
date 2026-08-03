@@ -25,8 +25,8 @@ def test_render_blueprint_deploys_only_backend_with_safe_defaults():
     assert env["ENVIRONMENT"]["value"] == "production"
     assert env["OPENAI_API_KEY"]["sync"] is False
     assert "value" not in env["OPENAI_API_KEY"]
-    assert env["SHOBDO_SHARED_SECRET"]["generateValue"] is True
-    assert "value" not in env["SHOBDO_SHARED_SECRET"]
+    assert env["SHOHOJAKKHOR_SHARED_SECRET"]["generateValue"] is True
+    assert "value" not in env["SHOHOJAKKHOR_SHARED_SECRET"]
 
 
 def test_render_start_command_uses_platform_port():

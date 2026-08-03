@@ -6,8 +6,8 @@ cost, licensing, or Play Store compliance is instead escalated in-thread.
 
 ## Product
 
-- **Product name**: Shobdo Keyboard / শব্দ কিবোর্ড.
-- **Package / applicationId**: `com.shobdo.keyboard`. Chosen because the user
+- **Product name**: Shohojakkhor Keyboard / সহজাক্ষর কিবোর্ড.
+- **Package / applicationId**: `com.shohojakkhor.keyboard`. Chosen because the user
   had no preference and no external domain to claim. Trivially changeable via
   `libs.versions.toml` before first Play Store upload.
 - **Primary user language**: Bengali (Bangladesh). English is a supported

@@ -41,12 +41,12 @@ router = APIRouter(tags=["transcribe"])
 
 
 def _require_secret(
-    x_shobdo_secret: Optional[str] = Header(default=None, alias="X-Shobdo-Secret"),
+    x_shohojakkhor_secret: Optional[str] = Header(default=None, alias="X-Shohojakkhor-Secret"),
 ) -> None:
-    if not settings.shobdo_shared_secret:
+    if not settings.shohojakkhor_shared_secret:
         return
-    supplied = x_shobdo_secret or ""
-    if not hmac.compare_digest(supplied, settings.shobdo_shared_secret):
+    supplied = x_shohojakkhor_secret or ""
+    if not hmac.compare_digest(supplied, settings.shohojakkhor_shared_secret):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error": {"code": "UNAUTHORIZED"}},

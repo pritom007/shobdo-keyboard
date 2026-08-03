@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ime_label">শব্দ কিবোর্ড</string>
+    <string name="ime_label">সহজাক্ষর কিবোর্ড</string>
 
     <!-- Sensitive-field indicator (§13) -->
     <string name="sensitive_mode_banner">সুরক্ষিত মোড — কেবল সাধারণ কিবোর্ড</string>

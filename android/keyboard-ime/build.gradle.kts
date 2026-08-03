@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.shobdo.keyboard.ime"
+    namespace = "com.shohojakkhor.keyboard.ime"
     compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {

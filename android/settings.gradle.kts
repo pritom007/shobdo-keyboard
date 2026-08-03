@@ -17,7 +17,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "shobdo-keyboard"
+rootProject.name = "shohojakkhor-keyboard"
 
 include(":app")
 include(":keyboard-ime")

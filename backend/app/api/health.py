@@ -11,4 +11,4 @@ router = APIRouter(tags=["health"])
 
 @router.get("/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok", "service": "shobdo-backend", "version": __version__}
+    return {"status": "ok", "service": "shohojakkhor-backend", "version": __version__}

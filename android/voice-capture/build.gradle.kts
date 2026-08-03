@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.shobdo.keyboard.voice.capture"
+    namespace = "com.shohojakkhor.keyboard.voice.capture"
     compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {

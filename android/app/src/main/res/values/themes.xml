@@ -6,5 +6,5 @@
   don't need the Material Components for Android library as a dependency.
 -->
 <resources>
-    <style name="Theme.Shobdo" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Shohojakkhor" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

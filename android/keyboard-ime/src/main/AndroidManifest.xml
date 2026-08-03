@@ -4,7 +4,7 @@
 
     <application>
         <service
-            android:name="com.shobdo.keyboard.ime.ShobdoInputMethodService"
+            android:name="com.shohojakkhor.keyboard.ime.ShohojakkhorInputMethodService"
             android:label="@string/ime_label"
             android:permission="android.permission.BIND_INPUT_METHOD"
             android:exported="true">

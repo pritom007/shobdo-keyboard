@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.shobdo.keyboard.translit"
+    namespace = "com.shohojakkhor.keyboard.translit"
     compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {

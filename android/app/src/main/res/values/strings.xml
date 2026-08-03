@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Shobdo</string>
-    <string name="app_name_bn">শব্দ কিবোর্ড</string>
+    <string name="app_name">Shohojakkhor</string>
+    <string name="app_name_bn">সহজাক্ষর কিবোর্ড</string>
 
     <!-- Setup screen -->
-    <string name="setup_title">শব্দ কিবোর্ড সেটআপ</string>
-    <string name="brand_logo_description">শব্দ কিবোর্ডের লোগো</string>
+    <string name="setup_title">সহজাক্ষর কিবোর্ড সেটআপ</string>
+    <string name="brand_logo_description">সহজাক্ষর কিবোর্ডের লোগো</string>
     <string name="setup_subtitle">দুই ধাপে কিবোর্ডটি চালু করুন।</string>
 
     <string name="setup_step1_title">ধাপ ১: কিবোর্ড চালু করুন</string>
-    <string name="setup_step1_body">সেটিংসে গিয়ে শব্দ কিবোর্ডের পাশের বোতামটি চালু করুন।</string>
+    <string name="setup_step1_body">সেটিংসে গিয়ে সহজাক্ষর কিবোর্ডের পাশের বোতামটি চালু করুন।</string>
     <string name="setup_step1_button">কিবোর্ড চালু করুন</string>
 
     <string name="setup_step2_title">ধাপ ২: কিবোর্ড বেছে নিন</string>
-    <string name="setup_step2_body">চালু করার পর, এখানে চাপ দিয়ে শব্দ কিবোর্ড বেছে নিন।</string>
+    <string name="setup_step2_body">চালু করার পর, এখানে চাপ দিয়ে সহজাক্ষর কিবোর্ড বেছে নিন।</string>
     <string name="setup_step2_button">কিবোর্ড বেছে নিন</string>
 
     <string name="setup_footer_note">যেকোনো সময় অন্য কিবোর্ডে ফিরে যেতে পারবেন।</string>
@@ -24,5 +24,5 @@
     <string name="setup_voice_button">ভয়েস চেষ্টা করুন</string>
 
     <!-- Voice screen -->
-    <string name="voice_title">শব্দ ভয়েস</string>
+    <string name="voice_title">সহজাক্ষর ভয়েস</string>
 </resources>

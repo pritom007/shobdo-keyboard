@@ -1,6 +1,6 @@
-# Backend — Shobdo Keyboard
+# Backend — Shohojakkhor Keyboard
 
-A focused, **stateless** speech-to-text proxy for the Shobdo Keyboard Android
+A focused, **stateless** speech-to-text proxy for the Shohojakkhor Keyboard Android
 IME. Bengali is the primary language. Audio in, text out, nothing persisted.
 
 > **v1 scope: transcription only.** Rewrite / revise endpoints (planned in
@@ -46,7 +46,7 @@ backend/
 ## API
 
 ### `GET /health`
-Liveness probe. `{ "status": "ok", "service": "shobdo-backend", "version": "..." }`
+Liveness probe. `{ "status": "ok", "service": "shohojakkhor-backend", "version": "..." }`
 
 ### `POST /v1/transcriptions`
 - **Request:** `multipart/form-data`
@@ -118,12 +118,12 @@ counter.
 ## Docker
 
 ```bash
-docker build -t shobdo-backend ./backend
-docker run -p 8000:8000 --env-file backend/.env shobdo-backend
+docker build -t shohojakkhor-backend ./backend
+docker run -p 8000:8000 --env-file backend/.env shohojakkhor-backend
 ```
 
 For deployment, set `ENVIRONMENT=production`, use HTTPS, configure
-`SHOBDO_SHARED_SECRET`, and restrict network access at a gateway. A static
+`SHOHOJAKKHOR_SHARED_SECRET`, and restrict network access at a gateway. A static
 secret embedded in a public APK can be extracted, so it is only a prototype
 control; production distribution needs short-lived per-install credentials or
 platform attestation.
@@ -144,7 +144,7 @@ Create the service from the Blueprint and enter `OPENAI_API_KEY` directly in
 Render when prompted. Never put its value in Git, CI configuration, issues, or
 chat. Subsequent backend commits deploy automatically after CI succeeds.
 
-The generated `SHOBDO_SHARED_SECRET` deliberately is not embedded in Android.
+The generated `SHOHOJAKKHOR_SHARED_SECRET` deliberately is not embedded in Android.
 Until the client has short-lived authentication, production transcription calls
 will receive `401`; this is a secure fail-closed state, not a deployment error.
 

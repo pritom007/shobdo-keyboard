@@ -80,7 +80,7 @@ jobs:
       - name: Upload development APKs
         uses: actions/upload-artifact@v4
         with:
-          name: shobdo-keyboard-development-debug-apks-${{ github.sha }}
+          name: shohojakkhor-keyboard-development-debug-apks-${{ github.sha }}
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30
