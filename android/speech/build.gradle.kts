@@ -10,12 +10,26 @@ android {
     defaultConfig {
         minSdk = libs.versions.min.sdk.get().toInt()
 
+        buildConfigField(
+            "String",
+            "BACKEND_BASE_URL",
+            "\"https://shobdo-keyboard-backend.onrender.com\"",
+        )
+
         consumerProguardFiles("consumer-rules.pro")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
-        buildConfig = false
+        buildConfig = true
+    }
+
+    buildTypes {
+        getByName("debug") {
+            // Physical devices can reach the developer machine with:
+            // adb reverse tcp:8000 tcp:8000
+            buildConfigField("String", "BACKEND_BASE_URL", "\"http://127.0.0.1:8000\"")
+        }
     }
 
     compileOptions {

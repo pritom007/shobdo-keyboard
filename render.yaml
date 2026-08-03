@@ -21,8 +21,6 @@ services:
         value: production
       - key: OPENAI_API_KEY
         sync: false
-      - key: SHOHOJAKKHOR_SHARED_SECRET
-        generateValue: true
       - key: ALLOWED_ORIGINS
         value: ""
       - key: MAX_AUDIO_BYTES

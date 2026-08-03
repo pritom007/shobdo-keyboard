@@ -72,7 +72,7 @@ values into documentation, source, tests, logs, issues, or chat transcripts.
 ## Next priorities
 
 1. Verify Bengali, English, and offline voice flows on a supported physical device.
-2. Deploy the backend behind HTTPS and production-grade client authentication.
+2. Add Play Integrity-backed client attestation before raising backend quotas.
 3. Add the reviewable LLM draft and conversational correction workflow.
 4. Persist transliteration preferences without storing sensitive-field input.
 5. Reduce APK size by delivering the offline model separately.

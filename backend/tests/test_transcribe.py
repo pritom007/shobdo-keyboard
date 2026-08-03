@@ -14,7 +14,6 @@ from fastapi.testclient import TestClient
 from app.api.transcribe import get_rate_limiter
 from app.main import app
 from app.security import ProviderError
-from app.settings import settings
 from tests.conftest import CountingRateLimiter, make_client, make_wav
 
 
@@ -71,26 +70,6 @@ def test_transcribe_rejects_unexpected_content_type(client):
     )
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "BAD_AUDIO"
-
-
-def test_transcribe_rejects_missing_configured_secret(client, monkeypatch):
-    monkeypatch.setattr(settings, "shohojakkhor_shared_secret", "configured-for-test")
-    resp = _post(client, make_wav(duration_ms=100))
-    assert resp.status_code == 401
-    assert resp.json()["error"]["code"] == "UNAUTHORIZED"
-
-
-def test_transcribe_accepts_matching_configured_secret(client, monkeypatch):
-    monkeypatch.setattr(settings, "shohojakkhor_shared_secret", "configured-for-test")
-    resp = client.post(
-        "/v1/transcriptions",
-        files={"audio": ("audio.wav", make_wav(duration_ms=100), "audio/wav")},
-        headers={
-            "X-Device-Id": "dev1",
-            "X-Shohojakkhor-Secret": "configured-for-test",
-        },
-    )
-    assert resp.status_code == 200
 
 
 def test_transcribe_too_long(client):

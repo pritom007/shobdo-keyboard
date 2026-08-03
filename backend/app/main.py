@@ -30,7 +30,7 @@ if _origins:
         allow_origins=_origins,
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Content-Type", "X-Device-Id", "X-Shohojakkhor-Secret"],
+        allow_headers=["Content-Type", "X-Device-Id"],
     )
 
 

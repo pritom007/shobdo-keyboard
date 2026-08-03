@@ -65,7 +65,8 @@ cost, licensing, or Play Store compliance is instead escalated in-thread.
     OpenAI-compat implementation is the only concrete adapter shipped in M2.
 - Deployment: **Docker** container; single stateless service.
 - Data retention: **zero** — see `privacy-model.md`.
-- Auth: shared secret header on M2, upgrade to per-install token at M4.
+- Auth: no extractable APK secret; use bounded public access for the MVP and
+  Play Integrity-backed attestation before wider distribution.
 
 ## Personal dictionary (planned for M6)
 
