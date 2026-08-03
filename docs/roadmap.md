@@ -3,6 +3,10 @@
 Milestones follow the master brief §28. Each milestone must leave the project
 compilable and testable.
 
+For the prioritized, task-ID-based feature checklist covering voice editing,
+accessibility, personalization, privacy, AI tools, power-user input, offline
+speech, and release quality, see [`product-backlog.md`](product-backlog.md).
+
 ---
 
 ## ✅ Milestone 0 — Repository foundation (in progress)
