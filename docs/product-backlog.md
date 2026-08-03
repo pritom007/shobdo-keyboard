@@ -59,17 +59,22 @@ privacy remain requirements for every item.
 
 ### Bangla suggestions and learning
 
-- [ ] **LANG-01 — Persist accepted Banglish choices.** Store selection memory
-  locally in DataStore, exclude sensitive/incognito fields, and provide one-tap
-  deletion of learned data.
-- [ ] **LANG-02 — Expand and evaluate the Bangla lexicon.** Add common names,
+- [x] **LANG-01 — Persist accepted Banglish choices.** Selection memory is
+  stored in app-private preferences, excluded from sensitive/incognito fields,
+  bounded to 1,000 mappings, and has a visible deletion control.
+- [x] **LANG-02 — Establish a versioned Bangla evaluation corpus.** The first
+  checked-in corpus covers traditional Banglish, noisy/missing-vowel forms,
+  dialect, phrases, names, and places. Continue adding common family, medicine,
+  and everyday terms from consented or synthetic examples.
+- [x] **LANG-03 — Context-aware candidate ranking.** Candidates use the current
+  composition, up to two preceding local words, persistent user selections,
+  and curated context rules without sending surrounding text to the server.
+- [x] **LANG-04 — Correct the immediately previous word.** Alternatives remain
+  after commit and replace only that word. Arbitrary host-text word selection is
+  still constrained by Android IME APIs and remains a later enhancement.
+- [ ] **LANG-02B — Expand the production Bangla lexicon.** Add common names,
   places, family terms, medicine terms, greetings, and everyday Bangladeshi
   phrases using a versioned, testable word list.
-- [ ] **LANG-03 — Context-aware candidate ranking.** Rank candidates using the
-  current composition, preceding local words, user selections, and recency
-  without sending surrounding text to the server.
-- [ ] **LANG-04 — Correct previous words.** Tapping a composed word shows
-  alternatives and replaces only that word while preserving cursor/selection.
 - [ ] **LANG-05 — Mixed Bangla/English detection.** Switch candidates naturally
   between Bangla and English while preserving familiar English terms and user
   language preference.
@@ -104,7 +109,7 @@ privacy remain requirements for every item.
 
 ### Personalization and shortcuts
 
-- [ ] **PERS-01 — Personal dictionary UI.** Add/edit/delete local words such as
+- [x] **PERS-01 — Personal dictionary UI.** Add and delete local words such as
   family names, places, and medicine names; never consult it in sensitive mode.
 - [ ] **PERS-02 — Phrase shortcuts.** Expand user-defined shortcuts such as
   `ass` into a phrase, with preview and collision handling.
@@ -236,4 +241,3 @@ Every completed task must include, where applicable:
 - [ ] Documentation and release notes.
 - [ ] Physical-device verification, including at least one lower-spec device
   before production release.
-

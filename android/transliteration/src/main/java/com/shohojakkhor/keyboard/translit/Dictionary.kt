@@ -14,6 +14,7 @@ public data class DictionaryEntry(
     val latin: String,
     val bengali: String,
     val frequency: Int = 1,
+    val source: CandidateSource = CandidateSource.DICTIONARY,
 )
 
 /**
@@ -23,6 +24,19 @@ public data class DictionaryEntry(
  */
 public interface BengaliDictionary {
     public fun lookup(latin: String): List<DictionaryEntry>
+
+    /** Snapshot used by the bounded local fuzzy matcher. */
+    public fun allEntries(): List<DictionaryEntry> = emptyList()
+}
+
+public class CompositeBengaliDictionary(
+    private vararg val dictionaries: BengaliDictionary,
+) : BengaliDictionary {
+    override fun lookup(latin: String): List<DictionaryEntry> =
+        dictionaries.flatMap { it.lookup(latin) }.distinctBy { it.latin to it.bengali }
+
+    override fun allEntries(): List<DictionaryEntry> =
+        dictionaries.flatMap(BengaliDictionary::allEntries).distinctBy { it.latin to it.bengali }
 }
 
 /**
@@ -44,6 +58,8 @@ public class SeedBengaliDictionary : BengaliDictionary {
 
     override fun lookup(latin: String): List<DictionaryEntry> =
         entries[latin.lowercase()] ?: emptyList()
+
+    override fun allEntries(): List<DictionaryEntry> = ENTRIES
 
     private companion object {
         val ENTRIES: List<DictionaryEntry> = listOf(

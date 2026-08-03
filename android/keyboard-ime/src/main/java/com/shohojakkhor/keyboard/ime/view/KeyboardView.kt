@@ -332,7 +332,7 @@ internal class KeyboardView(
 
     private companion object {
         const val KEY_HEIGHT_DP: Int = 56
-        const val CANDIDATE_STRIP_HEIGHT_DP: Int = 48
+        const val CANDIDATE_STRIP_HEIGHT_DP: Int = 56
         const val BACKSPACE_REPEAT_DELAY_MS: Long = 350L
         const val BACKSPACE_REPEAT_INTERVAL_MS: Long = 55L
         val BG_COLOR: Int = Color.parseColor("#E8EAED")

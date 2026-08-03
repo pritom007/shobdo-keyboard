@@ -207,8 +207,9 @@ All backend config is in [`backend/.env`](backend/.env.example) (copy to
   drops punctuation. An LLM cleanup step (raw STT → LLM → cleaned text) is
   planned, not yet built.
 - Banglish only (native Bengali keycap layout is a secondary track).
-- Personal dictionary + selection memory are in-memory only (don't survive
-  a process kill); DataStore persistence is planned.
+- Personal dictionary and accepted-correction learning persist locally in
+  app-private storage. They are never consulted or learned in sensitive fields,
+  and learned choices can be cleared from the setup screen.
 - The standalone `VoiceActivity` (setup screen) still uses the old
   server-only path and is secondary to the in-keyboard voice.
 

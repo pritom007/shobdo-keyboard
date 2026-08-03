@@ -116,13 +116,17 @@ Slice B — IME integration (complete):
   - Language toggle mid-composition commits raw Latin (never drop input).
   - Sensitive fields refuse Banglish mode.
 
-### 🚧 Track A — Slice C (M2C, next up)
+### 🚧 Track A — Slice C (M2C, active polish)
 
 Polish and persistence after the user has been beta-testing live on their
 Samsung device.
 
-- [ ] Persist `SelectionMemory` to DataStore so learned choices survive
-  process kill.
+- [x] Persist `SelectionMemory` in bounded app-private storage so learned
+  choices survive process kill, with incognito/sensitive exclusions and a
+  visible forget control.
+- [x] Add a local personal dictionary UI for names and places.
+- [x] Add conservative noisy Romanized Bangla matching, contextual ranking,
+  common phrase completion, emoji hints, and previous-word replacement.
 - [ ] Grow the seed dictionary using words the user has flagged as
   frequently-mis-transliterated (organic feedback).
 - [ ] Fix the `ng + vowel` edge case (`angur` → আঙ্গুর, currently produces

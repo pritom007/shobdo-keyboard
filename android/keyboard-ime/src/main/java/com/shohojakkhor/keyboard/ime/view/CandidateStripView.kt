@@ -47,6 +47,7 @@ internal class CandidateStripView(
     }
 
     private var currentCandidates: List<Candidate> = emptyList()
+    private var expanded: Boolean = false
 
     init {
         setBackgroundColor(STRIP_BG_COLOR)
@@ -62,15 +63,24 @@ internal class CandidateStripView(
     /** Update the strip contents. Empty list → idle hint. */
     fun setCandidates(candidates: List<Candidate>) {
         currentCandidates = candidates
+        expanded = false
+        renderCandidates()
+    }
+
+    private fun renderCandidates() {
         row.removeAllViews()
-        if (candidates.isEmpty()) {
+        if (currentCandidates.isEmpty()) {
             renderIdle()
         } else {
-            for ((index, cand) in candidates.withIndex()) {
+            val visible = if (expanded) currentCandidates else currentCandidates.take(PRIMARY_CANDIDATE_COUNT)
+            for ((index, cand) in visible.withIndex()) {
                 row.addView(buildCandidateButton(cand, isTop = index == 0))
-                if (index < candidates.lastIndex) {
+                if (index < visible.lastIndex || (!expanded && currentCandidates.size > visible.size)) {
                     row.addView(buildSeparator())
                 }
+            }
+            if (!expanded && currentCandidates.size > visible.size) {
+                row.addView(buildMoreButton())
             }
         }
         scrollTo(0, 0)
@@ -97,6 +107,11 @@ internal class CandidateStripView(
             minWidth = dp(72)
             isClickable = true
             isFocusable = true
+            contentDescription = if (isTop) {
+                context.getString(R.string.candidate_primary_description, cand.bengali)
+            } else {
+                context.getString(R.string.candidate_alternative_description, cand.bengali)
+            }
             background = candidateBackground(isTop)
             setOnClickListener {
                 performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -108,6 +123,27 @@ internal class CandidateStripView(
             )
         }
         return tv
+    }
+
+    private fun buildMoreButton(): View = TextView(context).apply {
+        text = "⋯"
+        contentDescription = context.getString(R.string.candidate_more_description)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+        setTextColor(TEXT_COLOR)
+        gravity = Gravity.CENTER
+        minWidth = dp(56)
+        setPadding(dp(12), 0, dp(12), 0)
+        isClickable = true
+        isFocusable = true
+        setOnClickListener {
+            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            expanded = true
+            renderCandidates()
+        }
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+        )
     }
 
     private fun buildSeparator(): View {
@@ -142,5 +178,6 @@ internal class CandidateStripView(
         val HINT_COLOR: Int = Color.parseColor("#666666")
         val SEPARATOR_COLOR: Int = Color.parseColor("#D0D3D6")
         val TOP_TINT_COLOR: Int = Color.parseColor("#DDE7F5")
+        const val PRIMARY_CANDIDATE_COUNT: Int = 3
     }
 }
