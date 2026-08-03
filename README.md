@@ -40,13 +40,10 @@ the cloud.
 
 ## Download the APK
 
-Every successful push—including every merge to `master`—publishes installable
-APKs in that CI run's **Artifacts** section for 30 days. Open the latest
-successful **[CI workflow run](../../actions/workflows/ci.yml?query=branch%3Amaster)**
-and download the `shobdo-keyboard-apks-*` artifact.
-
-Versioned builds are also published permanently on the
-**[GitHub Releases page](../../releases)** when a `v*` tag is pushed.
+Install update-compatible builds from the **[GitHub Releases page](../../releases)**.
+Each semantic version tag publishes permanently signed APKs. Ordinary CI runs
+also retain explicitly labelled development/debug APKs for 30 days, but those
+use Android's temporary debug certificate and are not part of the update path.
 
 To install on a phone:
 1. Download the APK for your device — **`arm64-v8a`** for nearly all modern
@@ -55,8 +52,11 @@ To install on a phone:
    apps** for your browser/files app.
 3. Open the downloaded APK and tap Install.
 
-The APK is debug-signed (fine for a prototype). A real signing key will be
-added before any Play Store distribution.
+Tagged APKs are signed with Shobdo's permanent release certificate, so a newer
+release installs over an older release without an uninstall. Moving from an
+older debug-signed build to the first release-signed build still requires one
+uninstall because Android does not allow an app's signing identity to change.
+See [`docs/release-signing.md`](docs/release-signing.md).
 
 ## Repository structure
 
@@ -170,8 +170,9 @@ Two GitHub Actions workflows live in [`.github/workflows/`](.github/workflows):
 - **`ci.yml`** — on every push / PR: runs the dependency script, builds the
   APK, and runs all Android unit tests + backend pytest. Caches Gradle and
   the large deps so most runs are fast.
-- **`release.yml`** — on every `v*` tag: builds the APK and publishes a
-  GitHub Release with the APK attached (the "Download the APK" flow above).
+- **`release.yml`** — on every semantic `v*` tag: derives a monotonically
+  increasing Android version code, builds permanently signed APKs and an AAB,
+  verifies their certificate, and publishes them in a GitHub Release.
 
 To cut a new release:
 

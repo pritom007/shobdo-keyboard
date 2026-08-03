@@ -75,12 +75,12 @@ jobs:
                    :speech-ondevice:testDebugUnitTest \
                    --console=plain --stacktrace
 
-      # Every successful push, including merges to master, leaves installable
-      # APKs on the workflow run's Artifacts section for 30 days.
-      - name: Upload installable APKs
+      # Debug APKs are for development only. User-facing, update-compatible
+      # builds are signed and published by release.yml from version tags.
+      - name: Upload development APKs
         uses: actions/upload-artifact@v4
         with:
-          name: shobdo-keyboard-apks-${{ github.sha }}
+          name: shobdo-keyboard-development-debug-apks-${{ github.sha }}
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30

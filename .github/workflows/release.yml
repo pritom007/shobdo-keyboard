@@ -1,14 +1,8 @@
 name: Release
 
-# Builds a debug APK on every `v*` git tag and publishes it as a GitHub
-# Release with the APKs attached. People can download + sideload-install
-# the APK directly from the Releases page — no Play Store required.
-#
-# The APK is debug-signed (the default Android debug key). It installs via
-# sideloading (enable "install unknown apps" for your browser/file manager
-# on Android). Debug certs expire ~1 year; for a long-lived public release
-# you'd add a real signing keystore as repository secrets — see the TODO
-# note below. For an early prototype that's fine.
+# Builds permanently signed APKs and an AAB on every `v*` tag. Every release
+# uses the same certificate, allowing Android to install newer versions over
+# older release builds without an uninstall.
 #
 # To cut a release:
 #     git tag v0.1.0
@@ -43,7 +37,7 @@ jobs:
           SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" "platforms;android-36" >/dev/null
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" >/dev/null
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -70,22 +64,68 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
-      - name: Build debug APK (per-ABI splits)
+      - name: Validate release tag and signing secrets
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+        run: |
+          test -n "$SIGNING_KEYSTORE_BASE64"
+          test -n "$SIGNING_KEY_ALIAS"
+          test -n "$SIGNING_KEY_PASSWORD"
+          test -n "$SIGNING_STORE_PASSWORD"
+
+          version="${GITHUB_REF_NAME#v}"
+          if [[ ! "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Release tags must use vMAJOR.MINOR.PATCH (for example v0.0.2)." >&2
+            exit 1
+          fi
+
+          version_code=$((10#${BASH_REMATCH[1]} * 1000000 + 10#${BASH_REMATCH[2]} * 1000 + 10#${BASH_REMATCH[3]}))
+          if (( version_code < 1 || version_code > 2100000000 )); then
+            echo "Computed Android versionCode is out of range." >&2
+            exit 1
+          fi
+
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/shobdo-release.p12"
+          chmod 600 "$RUNNER_TEMP/shobdo-release.p12"
+          echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/shobdo-release.p12" >> "$GITHUB_ENV"
+          echo "SIGNING_KEY_ALIAS=$SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "SIGNING_KEY_PASSWORD=$SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "SIGNING_STORE_PASSWORD=$SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$version" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$version_code" >> "$GITHUB_ENV"
+
+      - name: Build signed release APKs and Play Store bundle
         run: |
           cd android
-          ./gradlew :app:assembleDebug --console=plain --stacktrace
+          ./gradlew :app:assembleRelease :app:bundleRelease --console=plain --stacktrace
 
-      - name: Rename APKs with the tag name
+      - name: Verify release signatures
+        run: |
+          expected_sha256="748136D38F0559362A89EADC3D2E2DEC111D8CF74C6FA490288A18EFA649A304"
+          for apk in android/app/build/outputs/apk/release/*.apk; do
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$apk"
+            actual_sha256=$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk" \
+              | awk -F': ' '/Signer #1 certificate SHA-256 digest:/ { print toupper($2) }')
+            test "$actual_sha256" = "$expected_sha256"
+          done
+
+      - name: Rename release files with the tag name
         id: apk
         run: |
           tag="${GITHUB_REF_NAME}"
-          cp android/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk \
+          cp android/app/build/outputs/apk/release/app-arm64-v8a-release.apk \
              "shobdo-keyboard-${tag}-arm64-v8a.apk"
-          cp android/app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk \
+          cp android/app/build/outputs/apk/release/app-armeabi-v7a-release.apk \
              "shobdo-keyboard-${tag}-armeabi-v7a.apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab \
+             "shobdo-keyboard-${tag}.aab"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           ls -lh "shobdo-keyboard-${tag}-arm64-v8a.apk" \
-                 "shobdo-keyboard-${tag}-armeabi-v7a.apk"
+                 "shobdo-keyboard-${tag}-armeabi-v7a.apk" \
+                 "shobdo-keyboard-${tag}.aab"
 
       - name: Create GitHub Release + attach APKs
         uses: softprops/action-gh-release@v2
@@ -96,9 +136,4 @@ jobs:
           files: |
             shobdo-keyboard-${{ steps.apk.outputs.tag }}-arm64-v8a.apk
             shobdo-keyboard-${{ steps.apk.outputs.tag }}-armeabi-v7a.apk
-
-# TODO (before Play Store distribution, not needed for prototype sideloading):
-# Add a real signing keystore. Base64-encode it, store as a repo secret
-# (SIGNING_KEYSTORE_BASE64, SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD,
-# SIGNING_STORE_PASSWORD), decode + configure signingConfig in
-# app/build.gradle.kts, then switch the build to :app:assembleRelease.
+            shobdo-keyboard-${{ steps.apk.outputs.tag }}.aab
