@@ -30,7 +30,7 @@ compilable and testable.
   - [x] "কিবোর্ড চালু করুন" button → `Settings.ACTION_INPUT_METHOD_SETTINGS`
   - [x] "কিবোর্ড বেছে নিন" button → `InputMethodManager.showInputMethodPicker`
 - [x] `keyboard-ime` module
-  - [x] `ShobdoInputMethodService` registered in manifest
+  - [x] `ShohojakkhorInputMethodService` registered in manifest
   - [x] `method.xml`
   - [x] English QWERTY layout (letters, shift, space, backspace)
   - [x] Enter honours `EditorInfo.imeOptions`
@@ -65,7 +65,7 @@ Small in-flight fixes on top of M1. Not a full milestone.
 - [x] **Navigation-bar inset fix.** The IME window now consumes
   `WindowInsetsCompat.Type.navigationBars() | mandatorySystemGestures()` as
   bottom padding via `WindowCompat.setDecorFitsSystemWindows(false)` in
-  `ShobdoInputMethodService.onCreateInputView` and an
+  `ShohojakkhorInputMethodService.onCreateInputView` and an
   `OnApplyWindowInsetsListener` on `KeyboardView`. Bottom row is no longer
   eaten by gesture-nav.
 - [x] `KeyboardView.setExtraBottomGapDp()` — programmatic hook for adding
@@ -104,7 +104,7 @@ Slice B — IME integration (complete):
   to "En".
 - [x] `CandidateStripView` — 48-dp-tall horizontal strip, 20 sp Bengali text,
   top candidate tinted, tap-to-commit, scrollable overflow.
-- [x] Composition wiring in `ShobdoInputMethodService`:
+- [x] Composition wiring in `ShohojakkhorInputMethodService`:
   - Latin buffer per keystroke → `setComposingText(topBengali)`.
   - Tap candidate → `commitText(bengali)` + `engine.onUserSelection(...)`.
   - Space / Enter commit top candidate.
@@ -125,7 +125,7 @@ Samsung device.
   আংুর via anusvara).
 - [ ] Enable shift in `BENGALI_BANGLISH` mode so retroflex capitals
   (`T`, `D`, `N`, `Sh`) are reachable via the keyboard itself.
-- [ ] Unit tests for the composition state machine in `ShobdoInputMethodService`
+- [ ] Unit tests for the composition state machine in `ShohojakkhorInputMethodService`
   (currently zero — only the pure engine has tests).
 - [ ] Instrumentation smoke test for `SetupActivity`.
 

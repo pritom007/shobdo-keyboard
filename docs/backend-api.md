@@ -9,7 +9,7 @@ TBD per deployment. During development: `http://localhost:8000`.
 
 ## Authentication
 
-The prototype backend supports `X-Shobdo-Secret` when configured. This must not
+The prototype backend supports `X-Shohojakkhor-Secret` when configured. This must not
 be embedded in a publicly distributed APK because application secrets are
 extractable. Production distribution requires short-lived per-install
 credentials or platform attestation at the API gateway.

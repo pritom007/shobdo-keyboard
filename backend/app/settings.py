@@ -38,9 +38,9 @@ class Settings(BaseSettings):
     allowed_origins: str = ""
 
     # --- Auth ----------------------------------------------------------------
-    # Optional shared secret. If set, clients must send `X-Shobdo-Secret`.
+    # Optional shared secret. If set, clients must send `X-Shohojakkhor-Secret`.
     # Empty = no auth (dev only). Per-install tokens land in a later milestone.
-    shobdo_shared_secret: str = ""
+    shohojakkhor_shared_secret: str = ""
 
     # --- Limits --------------------------------------------------------------
     max_audio_bytes: int = Field(default=2_097_152, ge=44, le=25_000_000)
@@ -60,8 +60,8 @@ class Settings(BaseSettings):
         missing: list[str] = []
         if not self.openai_api_key.strip():
             missing.append("OPENAI_API_KEY")
-        if not self.shobdo_shared_secret.strip():
-            missing.append("SHOBDO_SHARED_SECRET")
+        if not self.shohojakkhor_shared_secret.strip():
+            missing.append("SHOHOJAKKHOR_SHARED_SECRET")
         if missing:
             raise ValueError(f"production requires: {', '.join(missing)}")
 

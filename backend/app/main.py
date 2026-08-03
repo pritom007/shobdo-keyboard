@@ -18,9 +18,9 @@ from .api import health, transcribe
 from .settings import settings
 
 app = FastAPI(
-    title="Shobdo Backend",
+    title="Shohojakkhor Backend",
     version=__version__,
-    description="Speech-to-text proxy for the Shobdo Keyboard Android IME.",
+    description="Speech-to-text proxy for the Shohojakkhor Keyboard Android IME.",
 )
 
 _origins = [o.strip() for o in settings.allowed_origins.split(",") if o.strip()]
@@ -30,7 +30,7 @@ if _origins:
         allow_origins=_origins,
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Content-Type", "X-Device-Id", "X-Shobdo-Secret"],
+        allow_headers=["Content-Type", "X-Device-Id", "X-Shohojakkhor-Secret"],
     )
 
 
@@ -59,4 +59,4 @@ app.include_router(transcribe.router)
 
 @app.get("/")
 async def root() -> dict[str, str]:
-    return {"service": "shobdo-backend", "version": __version__, "health": "/health"}
+    return {"service": "shohojakkhor-backend", "version": __version__, "health": "/health"}

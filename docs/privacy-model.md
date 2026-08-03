@@ -139,7 +139,7 @@ backup properly.
 Users can:
 
 - Clear the personal dictionary from settings.
-- Clear app data via Android Settings → Apps → Shobdo → Storage → Clear data.
+- Clear app data via Android Settings → Apps → Shohojakkhor → Storage → Clear data.
   This removes DataStore preferences, Room DB, and any temp state.
 
 When account-based features arrive (not planned in first year), deletion must

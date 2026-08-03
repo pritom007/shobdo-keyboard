@@ -6,7 +6,7 @@ out of the repository.
 
 ## Current state
 
-Shobdo Keyboard is an elderly-friendly Bengali and English Android IME. The
+Shohojakkhor Keyboard is an elderly-friendly Bengali and English Android IME. The
 current prototype includes:
 
 - English QWERTY and Banglish-to-Bengali typing with candidates.

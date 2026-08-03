@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.shobdo.keyboard.speech.ondevice"
+    namespace = "com.shohojakkhor.keyboard.speech.ondevice"
     compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {

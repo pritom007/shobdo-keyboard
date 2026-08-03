@@ -46,7 +46,7 @@ Libraries under evaluation but *not yet added*:
 ## Compliance notes
 
 - No GPL/AGPL dependency is currently included. If a copyleft library is
-  proposed later, escalate: it constrains the eventual license of Shobdo
+  proposed later, escalate: it constrains the eventual license of Shohojakkhor
   Keyboard itself.
 - No dependency with an "no commercial use" clause.
 - Every dependency version is pinned via `gradle/libs.versions.toml` (Android)

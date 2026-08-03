@@ -1,7 +1,7 @@
-# Shobdo Keyboard backend — speech-to-text proxy.
+# Shohojakkhor Keyboard backend — speech-to-text proxy.
 # Multi-stage, slim, non-root. Stateless and horizontally scalable.
-# Build:  docker build -t shobdo-backend ./backend
-# Run:    docker run -p 8000:8000 --env-file backend/.env shobdo-backend
+# Build:  docker build -t shohojakkhor-backend ./backend
+# Run:    docker run -p 8000:8000 --env-file backend/.env shohojakkhor-backend
 
 # --- build -------------------------------------------------------------------
 FROM python:3.11-slim AS build
@@ -26,12 +26,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH"
 
 # Non-root user for defense-in-depth.
-RUN groupadd --system shobdo && useradd --system --gid shobdo --home /app shobdo
+RUN groupadd --system shohojakkhor && useradd --system --gid shohojakkhor --home /app shohojakkhor
 WORKDIR /app
 COPY --from=build /opt/venv /opt/venv
 COPY app ./app
 
-USER shobdo
+USER shohojakkhor
 EXPOSE 8000
 
 # Stateless: any number of replicas behind a load balancer is safe.

@@ -23,11 +23,11 @@ require(!releaseBuildRequested || hasReleaseSigning) {
 }
 
 android {
-    namespace = "com.shobdo.keyboard"
+    namespace = "com.shohojakkhor.keyboard"
     compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.shobdo.keyboard"
+        applicationId = "com.shohojakkhor.keyboard"
         minSdk = libs.versions.min.sdk.get().toInt()
         targetSdk = libs.versions.target.sdk.get().toInt()
         versionCode = providers.environmentVariable("VERSION_CODE").orNull?.toInt() ?: 1

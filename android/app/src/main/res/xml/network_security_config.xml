@@ -2,7 +2,7 @@
 <!--
   Network security config.
 
-  Android (API 28+) blocks cleartext HTTP by default. The Shobdo backend is
+  Android (API 28+) blocks cleartext HTTP by default. The Shohojakkhor backend is
   reached over HTTPS in production, but for LOCAL DEVELOPMENT the Android
   client talks to the dev machine's localhost via:
 

@@ -74,20 +74,20 @@ def test_transcribe_rejects_unexpected_content_type(client):
 
 
 def test_transcribe_rejects_missing_configured_secret(client, monkeypatch):
-    monkeypatch.setattr(settings, "shobdo_shared_secret", "configured-for-test")
+    monkeypatch.setattr(settings, "shohojakkhor_shared_secret", "configured-for-test")
     resp = _post(client, make_wav(duration_ms=100))
     assert resp.status_code == 401
     assert resp.json()["error"]["code"] == "UNAUTHORIZED"
 
 
 def test_transcribe_accepts_matching_configured_secret(client, monkeypatch):
-    monkeypatch.setattr(settings, "shobdo_shared_secret", "configured-for-test")
+    monkeypatch.setattr(settings, "shohojakkhor_shared_secret", "configured-for-test")
     resp = client.post(
         "/v1/transcriptions",
         files={"audio": ("audio.wav", make_wav(duration_ms=100), "audio/wav")},
         headers={
             "X-Device-Id": "dev1",
-            "X-Shobdo-Secret": "configured-for-test",
+            "X-Shohojakkhor-Secret": "configured-for-test",
         },
     )
     assert resp.status_code == 200

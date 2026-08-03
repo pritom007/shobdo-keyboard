@@ -6,8 +6,8 @@ implementer reads.
 
 ## Product name
 
-- English: **Shobdo Keyboard**
-- Bengali: **শব্দ কিবোর্ড**
+- English: **Shohojakkhor Keyboard**
+- Bengali: **সহজাক্ষর কিবোর্ড**
 
 ## One-line promise
 
@@ -60,7 +60,7 @@ Not "keyboard + AI feature". The **core interaction** is:
 |---|---|
 | বেশি বাংলা | Prefer Bengali equivalents where natural. |
 | **স্বাভাবিক মিশ্র ভাষা** *(default)* | Keep familiar English words as English. |
-| English শব্দ রাখুন | Aggressively keep English words as English. |
+| English সহজাক্ষর রাখুন | Aggressively keep English words as English. |
 
 ## Non-negotiable safety rules for the AI
 

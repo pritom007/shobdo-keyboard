@@ -1,7 +1,7 @@
-# Shobdo Keyboard — শব্দ কিবোর্ড
+# Shohojakkhor Keyboard — সহজাক্ষর কিবোর্ড
 
 <p align="center">
-  <img src="branding/shobdo-logo.png" width="180" alt="Shobdo Keyboard logo">
+  <img src="branding/shohojakkhor-logo.png" width="180" alt="Shohojakkhor Keyboard logo">
 </p>
 
 A patient Bengali & English Android keyboard for elderly users. Type Bengali
@@ -52,10 +52,15 @@ To install on a phone:
    apps** for your browser/files app.
 3. Open the downloaded APK and tap Install.
 
-Tagged APKs are signed with Shobdo's permanent release certificate, so a newer
+Tagged APKs are signed with Shohojakkhor's permanent release certificate, so a newer
 release installs over an older release without an uninstall. Moving from an
 older debug-signed build to the first release-signed build still requires one
 uninstall because Android does not allow an app's signing identity to change.
+
+The rebrand also changes the Android application ID to
+`com.shohojakkhor.keyboard`. Any pre-rebrand development build must therefore
+be uninstalled once. All public Shohojakkhor releases keep this application ID
+and signing certificate, so subsequent versions update normally.
 See [`docs/release-signing.md`](docs/release-signing.md).
 
 ## Repository structure
@@ -105,10 +110,10 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 # 3. Build + install on a connected device.
 ./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
-adb shell ime set com.shobdo.keyboard/.ime.ShobdoInputMethodService
+adb shell ime set com.shohojakkhor.keyboard/.ime.ShohojakkhorInputMethodService
 ```
 
-Then open any text field, switch to Shobdo keyboard (IME picker → Shobdo),
+Then open any text field, switch to Shohojakkhor keyboard (IME picker → Shohojakkhor),
 and follow the two on-screen prompts the first time.
 
 ## Build & test

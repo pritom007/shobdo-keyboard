@@ -1,17 +1,17 @@
 # Android release signing
 
-Shobdo release APKs use one permanent signing identity. Android accepts an
+Shohojakkhor release APKs use one permanent signing identity. Android accepts an
 in-place update only when the application ID is unchanged, the new
 `versionCode` is higher, and both APKs are signed by the same certificate.
 
 ## Certificate identity
 
-- Alias: `shobdo-release`
+- Alias: `shohojakkhor-release`
 - Store type: PKCS#12
 - Algorithm: RSA 4096 / SHA-256 with RSA
 - Valid through: 2053-12-19
 - SHA-256 fingerprint:
-  `74:81:36:D3:8F:05:59:36:2A:89:EA:DC:3D:2E:2D:EC:11:1D:8C:F7:4C:6F:A4:90:28:8A:18:EF:A6:49:A3:04`
+  `5A:0A:48:DA:BC:97:28:16:77:11:69:D3:4E:ED:33:A3:2E:AA:D4:77:DC:C7:DE:B1:18:99:56:E1:D7:AC:7A:BD`
 
 The keystore and its password are never committed. The repository Actions
 secrets are:
