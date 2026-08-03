@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -254,13 +255,71 @@ internal class KeyboardView(
                 marginStart = dp(2)
                 marginEnd = dp(2)
             }
-            setOnClickListener {
-                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        }
+
+        if (key.action is KeyAction.Backspace) {
+            configureRepeatingBackspace(button)
+        } else {
+            button.setOnClickListener {
+                it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 // Never log key.label — it is user content for character keys (§26 #2).
                 onKeyAction(key.action)
             }
         }
         return button
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun configureRepeatingBackspace(button: Button) {
+        var touchActive = false
+        var suppressNextClick = false
+        lateinit var repeatDelete: Runnable
+
+        repeatDelete = Runnable {
+            if (!touchActive) return@Runnable
+            onKeyAction(KeyAction.Backspace)
+            button.postDelayed(repeatDelete, BACKSPACE_REPEAT_INTERVAL_MS)
+        }
+
+        // Keeps keyboard and switch-access activation working. Touch releases
+        // call performClick for accessibility but suppress its duplicate delete.
+        button.setOnClickListener {
+            if (suppressNextClick) {
+                suppressNextClick = false
+            } else {
+                it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                onKeyAction(KeyAction.Backspace)
+            }
+        }
+
+        button.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    touchActive = true
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onKeyAction(KeyAction.Backspace)
+                    button.postDelayed(repeatDelete, BACKSPACE_REPEAT_DELAY_MS)
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    touchActive = false
+                    button.removeCallbacks(repeatDelete)
+                    suppressNextClick = true
+                    view.performClick()
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    touchActive = false
+                    button.removeCallbacks(repeatDelete)
+                    suppressNextClick = false
+                    true
+                }
+
+                else -> true
+            }
+        }
     }
 
     private fun keyLabelSp(key: Key): Float = when (key.action) {
@@ -274,6 +333,8 @@ internal class KeyboardView(
     private companion object {
         const val KEY_HEIGHT_DP: Int = 56
         const val CANDIDATE_STRIP_HEIGHT_DP: Int = 48
+        const val BACKSPACE_REPEAT_DELAY_MS: Long = 350L
+        const val BACKSPACE_REPEAT_INTERVAL_MS: Long = 55L
         val BG_COLOR: Int = Color.parseColor("#E8EAED")
         val BANNER_COLOR: Int = Color.parseColor("#B00020")
     }
