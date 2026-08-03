@@ -50,7 +50,13 @@ public class AvroLikeEngine(
                 val exact = variant == normalized
                 raw += Candidate(
                     bengali = entry.bengali,
-                    source = if (exact) CandidateSource.DICTIONARY else CandidateSource.NORMALIZED_DICTIONARY,
+                    source = if (entry.source == CandidateSource.PERSONAL_DICTIONARY) {
+                        CandidateSource.PERSONAL_DICTIONARY
+                    } else if (exact) {
+                        CandidateSource.DICTIONARY
+                    } else {
+                        CandidateSource.NORMALIZED_DICTIONARY
+                    },
                     score = (if (exact) BASE_DICTIONARY else BASE_NORMALIZED) + entry.frequency,
                 )
             }

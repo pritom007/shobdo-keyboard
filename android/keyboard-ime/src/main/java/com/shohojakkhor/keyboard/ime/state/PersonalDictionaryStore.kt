@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Base64
 import com.shohojakkhor.keyboard.translit.BengaliDictionary
 import com.shohojakkhor.keyboard.translit.DictionaryEntry
+import com.shohojakkhor.keyboard.translit.CandidateSource
 
 /** App-private personal names/places dictionary shared by setup UI and IME. */
 public class PersonalDictionaryStore(context: Context) : BengaliDictionary {
@@ -34,13 +35,22 @@ public class PersonalDictionaryStore(context: Context) : BengaliDictionary {
     override fun lookup(latin: String): List<DictionaryEntry> =
         prefs.getStringSet(encode(latin.trim().lowercase()), emptySet())
             .orEmpty()
-            .map { DictionaryEntry(latin.trim().lowercase(), it, PERSONAL_FREQUENCY) }
+            .map {
+                DictionaryEntry(
+                    latin.trim().lowercase(),
+                    it,
+                    PERSONAL_FREQUENCY,
+                    CandidateSource.PERSONAL_DICTIONARY,
+                )
+            }
 
     override fun allEntries(): List<DictionaryEntry> = prefs.all.flatMap { (key, value) ->
         val latin = decode(key) ?: return@flatMap emptyList()
         @Suppress("UNCHECKED_CAST")
         val values = value as? Set<String> ?: return@flatMap emptyList()
-        values.map { DictionaryEntry(latin, it, PERSONAL_FREQUENCY) }
+        values.map {
+            DictionaryEntry(latin, it, PERSONAL_FREQUENCY, CandidateSource.PERSONAL_DICTIONARY)
+        }
     }
 
     public fun entries(): List<DictionaryEntry> = allEntries().sortedWith(

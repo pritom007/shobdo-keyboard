@@ -14,6 +14,7 @@ public data class DictionaryEntry(
     val latin: String,
     val bengali: String,
     val frequency: Int = 1,
+    val source: CandidateSource = CandidateSource.DICTIONARY,
 )
 
 /**

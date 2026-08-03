@@ -115,6 +115,7 @@ android {
 
 dependencies {
     implementation(project(":keyboard-ime"))
+    implementation(project(":transliteration"))
     implementation(project(":voice-capture"))
     implementation(project(":speech"))
     implementation(project(":speech-ondevice"))
