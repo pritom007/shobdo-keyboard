@@ -90,6 +90,23 @@ jobs:
 
           printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/shohojakkhor-release.p12"
           chmod 600 "$RUNNER_TEMP/shohojakkhor-release.p12"
+
+          # Fail here with a focused error instead of waiting for Gradle to
+          # finish compiling before discovering an invalid signing secret.
+          expected_sha256="5A0A48DABC972816771169D34EED33A32EAAD477DCC7DEB1189956E1D7AC7ABD"
+          keytool -list \
+            -keystore "$RUNNER_TEMP/shohojakkhor-release.p12" \
+            -storetype PKCS12 \
+            -storepass:env SIGNING_STORE_PASSWORD \
+            -alias "$SIGNING_KEY_ALIAS" >/dev/null
+          actual_sha256=$(keytool -list -v \
+            -keystore "$RUNNER_TEMP/shohojakkhor-release.p12" \
+            -storetype PKCS12 \
+            -storepass:env SIGNING_STORE_PASSWORD \
+            -alias "$SIGNING_KEY_ALIAS" \
+            | awk -F': ' '/SHA256:/{gsub(":", "", $2); print toupper($2); exit}')
+          test "$actual_sha256" = "$expected_sha256"
+
           echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/shohojakkhor-release.p12" >> "$GITHUB_ENV"
           echo "SIGNING_KEY_ALIAS=$SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
           echo "SIGNING_KEY_PASSWORD=$SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
