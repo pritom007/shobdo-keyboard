@@ -66,7 +66,6 @@ Liveness probe. `{ "status": "ok", "service": "shohojakkhor-backend", "version":
   | 413 | `TOO_LARGE` | exceeds `MAX_AUDIO_BYTES` |
   | 413 | `TOO_LONG` | exceeds `MAX_AUDIO_SECONDS` |
   | 429 | `RATE_LIMIT` | request-rate budget exceeded |
-  | 401 | `UNAUTHORIZED` | shared-secret mismatch (when configured) |
   | 502/503/504 | `PROVIDER_*` | upstream speech-provider failure |
 
 ## Non-negotiable rules
@@ -122,11 +121,11 @@ docker build -t shohojakkhor-backend ./backend
 docker run -p 8000:8000 --env-file backend/.env shohojakkhor-backend
 ```
 
-For deployment, set `ENVIRONMENT=production`, use HTTPS, configure
-`SHOHOJAKKHOR_SHARED_SECRET`, and restrict network access at a gateway. A static
-secret embedded in a public APK can be extracted, so it is only a prototype
-control; production distribution needs short-lived per-install credentials or
-platform attestation.
+For deployment, set `ENVIRONMENT=production`, use HTTPS, and keep the provider
+key only on the server. Public APKs cannot safely carry a shared application
+secret because it can be extracted. This MVP therefore relies on bounded audio
+uploads and source-plus-install rate limiting; Google Play distribution should
+add Play Integrity-backed attestation before raising service quotas.
 
 ## Render deployment
 
@@ -136,7 +135,6 @@ It configures a free Python service in Singapore with:
 - `backend/` as the service root directory
 - automatic deployment only after GitHub checks pass
 - `/health` deployment health checks
-- a generated backend authentication secret
 - a dashboard-supplied provider key (`OPENAI_API_KEY`)
 - build filtering so Android-only changes do not redeploy the backend
 
@@ -144,9 +142,8 @@ Create the service from the Blueprint and enter `OPENAI_API_KEY` directly in
 Render when prompted. Never put its value in Git, CI configuration, issues, or
 chat. Subsequent backend commits deploy automatically after CI succeeds.
 
-The generated `SHOHOJAKKHOR_SHARED_SECRET` deliberately is not embedded in Android.
-Until the client has short-lived authentication, production transcription calls
-will receive `401`; this is a secure fail-closed state, not a deployment error.
+The release APK uses the Render HTTPS URL. Debug APKs keep using localhost so
+developers can run the backend through `adb reverse tcp:8000 tcp:8000`.
 
 ## See also
 

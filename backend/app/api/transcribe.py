@@ -18,13 +18,11 @@ Contract (stable across backend rewrites; the Android client depends on it):
     413 TOO_LARGE       — exceeds MAX_AUDIO_BYTES
     413 TOO_LONG        — exceeds MAX_AUDIO_SECONDS
     429 RATE_LIMIT      — per-device rate exceeded
-    401 UNAUTHORIZED    — shared secret mismatch (when configured)
     502/503/504 PROVIDER_* — upstream speech provider failure
 """
 
 from __future__ import annotations
 
-import hmac
 import struct
 from typing import Optional
 
@@ -36,22 +34,6 @@ from ..security import InMemoryRateLimiter, ProviderError, RateLimiter, rate_lim
 from ..settings import settings
 
 router = APIRouter(tags=["transcribe"])
-
-# --- Shared-secret auth (optional) -------------------------------------------
-
-
-def _require_secret(
-    x_shohojakkhor_secret: Optional[str] = Header(default=None, alias="X-Shohojakkhor-Secret"),
-) -> None:
-    if not settings.shohojakkhor_shared_secret:
-        return
-    supplied = x_shohojakkhor_secret or ""
-    if not hmac.compare_digest(supplied, settings.shohojakkhor_shared_secret):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": {"code": "UNAUTHORIZED"}},
-        )
-
 
 # --- Dependency-injected collaborators (tests override these) -----------------
 
@@ -102,7 +84,6 @@ async def transcribe(
     x_device_id: Optional[str] = Header(default=None, alias="X-Device-Id"),
     provider: SpeechProvider = Depends(get_provider),
     limiter: RateLimiter = Depends(get_rate_limiter),
-    _auth: None = Depends(_require_secret),
 ) -> dict:
     # Rate-limit before reading the body — cheapest abuse guard.
     client_host = request.client.host if request.client else None

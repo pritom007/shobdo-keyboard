@@ -37,11 +37,6 @@ class Settings(BaseSettings):
     # Native Android clients do not need CORS. Enable only for a known web UI.
     allowed_origins: str = ""
 
-    # --- Auth ----------------------------------------------------------------
-    # Optional shared secret. If set, clients must send `X-Shohojakkhor-Secret`.
-    # Empty = no auth (dev only). Per-install tokens land in a later milestone.
-    shohojakkhor_shared_secret: str = ""
-
     # --- Limits --------------------------------------------------------------
     max_audio_bytes: int = Field(default=2_097_152, ge=44, le=25_000_000)
     max_audio_seconds: int = Field(default=60, ge=1, le=600)
@@ -60,8 +55,6 @@ class Settings(BaseSettings):
         missing: list[str] = []
         if not self.openai_api_key.strip():
             missing.append("OPENAI_API_KEY")
-        if not self.shohojakkhor_shared_secret.strip():
-            missing.append("SHOHOJAKKHOR_SHARED_SECRET")
         if missing:
             raise ValueError(f"production requires: {', '.join(missing)}")
 

@@ -5,14 +5,15 @@ this document are forward-looking contracts and are not available yet.
 
 ## Base URL
 
-TBD per deployment. During development: `http://localhost:8000`.
+Production: `https://shobdo-keyboard-backend.onrender.com`.
+During development: `http://localhost:8000`.
 
 ## Authentication
 
-The prototype backend supports `X-Shohojakkhor-Secret` when configured. This must not
-be embedded in a publicly distributed APK because application secrets are
-extractable. Production distribution requires short-lived per-install
-credentials or platform attestation at the API gateway.
+The public MVP does not embed an application secret because APK secrets are
+extractable. Requests are constrained by source-plus-install rate limiting and
+strict audio size/duration limits. Add Play Integrity-backed attestation before
+raising provider quotas or scaling public distribution.
 
 Transcription requests carry `X-Device-Id`, an opaque install-local value used
 only as one input to coarse abuse prevention. It is not trusted as identity.
@@ -28,7 +29,7 @@ only as one input to coarse abuse prevention. It is not trusted as identity.
 ```
 
 Implemented transcription codes are `NO_AUDIO`, `BAD_AUDIO`, `TOO_LARGE`,
-`TOO_LONG`, `RATE_LIMIT`, `UNAUTHORIZED`, `PROVIDER_NOT_CONFIGURED`,
+`TOO_LONG`, `RATE_LIMIT`, `PROVIDER_NOT_CONFIGURED`,
 `PROVIDER_TIMEOUT`, `PROVIDER_RATE_LIMIT`, and `PROVIDER_ERROR`.
 
 The client maps stable codes to local Bengali messages. The server does not
