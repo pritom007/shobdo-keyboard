@@ -7,4 +7,7 @@
 
     <!-- Banglish mode hints -->
     <string name="banglish_empty_hint">Banglish লিখুন → বাংলা</string>
+    <string name="candidate_primary_description">%1$s, প্রধান পরামর্শ; স্পেস চাপলে এটি লেখা হবে</string>
+    <string name="candidate_alternative_description">বিকল্প পরামর্শ %1$s</string>
+    <string name="candidate_more_description">আরও পরামর্শ দেখুন</string>
 </resources>

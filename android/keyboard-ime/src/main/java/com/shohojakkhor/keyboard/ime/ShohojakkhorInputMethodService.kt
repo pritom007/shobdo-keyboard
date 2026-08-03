@@ -18,6 +18,9 @@ import com.shohojakkhor.keyboard.ime.privacy.InputPrivacyPolicy
 import com.shohojakkhor.keyboard.ime.state.KeyboardMode
 import com.shohojakkhor.keyboard.ime.state.KeyboardModeTransitions
 import com.shohojakkhor.keyboard.ime.state.LanguagePreference
+import com.shohojakkhor.keyboard.ime.state.PersistentSelectionMemory
+import com.shohojakkhor.keyboard.ime.state.PersonalDictionaryStore
+import com.shohojakkhor.keyboard.ime.state.SuggestionPreferences
 import com.shohojakkhor.keyboard.ime.voice.HybridResult
 import com.shohojakkhor.keyboard.ime.voice.HybridSpeechRecognizer
 import com.shohojakkhor.keyboard.ime.voice.VoiceController
@@ -29,7 +32,12 @@ import com.shohojakkhor.keyboard.speech.SpeechConfig
 import com.shohojakkhor.keyboard.speech.ondevice.OnDeviceSpeechRecognizer
 import com.shohojakkhor.keyboard.translit.AvroLikeEngine
 import com.shohojakkhor.keyboard.translit.Candidate
+import com.shohojakkhor.keyboard.translit.CandidateKind
+import com.shohojakkhor.keyboard.translit.CandidateReplacement
+import com.shohojakkhor.keyboard.translit.CompositeBengaliDictionary
+import com.shohojakkhor.keyboard.translit.SeedBengaliDictionary
 import com.shohojakkhor.keyboard.translit.TransliterationEngine
+import com.shohojakkhor.keyboard.translit.SuggestionRequest
 import com.shohojakkhor.keyboard.voice.capture.AudioRecordAudioSource
 import com.shohojakkhor.keyboard.voice.capture.AudioRecorder
 import com.shohojakkhor.keyboard.voice.capture.MicPermission
@@ -67,7 +75,15 @@ import com.shohojakkhor.keyboard.voice.capture.Recording
 public class ShohojakkhorInputMethodService : InputMethodService() {
 
     private val privacyPolicy: InputPrivacyPolicy = DefaultInputPrivacyPolicy()
-    private val engine: TransliterationEngine = AvroLikeEngine()
+    private val engine: TransliterationEngine by lazy {
+        AvroLikeEngine(
+            dictionary = CompositeBengaliDictionary(
+                PersonalDictionaryStore(this),
+                SeedBengaliDictionary(),
+            ),
+            memory = PersistentSelectionMemory(this),
+        )
+    }
 
     /**
      * Persistent store of the user's last chosen language. Lazily created
@@ -75,6 +91,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
      * has been attached to Android.
      */
     private val languagePref: LanguagePreference by lazy { LanguagePreference(this) }
+    private val suggestionPrefs: SuggestionPreferences by lazy { SuggestionPreferences(this) }
 
     private var keyboardView: KeyboardView? = null
     private var mode: KeyboardMode = KeyboardMode.ENGLISH_LOWER
@@ -83,6 +100,8 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
 
     /** Latin composing buffer, non-empty only when [mode] is BENGALI_BANGLISH. */
     private var composing: String = ""
+    private val recentLatinWords: ArrayDeque<String> = ArrayDeque()
+    private var lastCommittedWord: LastCommittedWord? = null
 
     // -- Voice (M3B + session 3 hybrid) ----------------------------------------
     //
@@ -275,6 +294,8 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         super.onStartInput(attribute, restarting)
         currentEditorInfo = attribute
         privacyMode = privacyPolicy.classify(attribute)
+        recentLatinWords.clear()
+        lastCommittedWord = null
 
         // Restore the user's persisted language for every new input session
         // (screen unlock, field focus change, etc.). This is the fix for
@@ -305,6 +326,8 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         }
         commitComposingLatinAsIs()
         currentEditorInfo = null
+        recentLatinWords.clear()
+        lastCommittedWord = null
         privacyMode = InputPrivacyMode.NORMAL
         keyboardView?.setPrivacyMode(privacyMode)
     }
@@ -358,6 +381,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
 
     private fun handleCharacter(ic: InputConnection, text: String) {
         if (mode.isBengaliBanglish && privacyMode != InputPrivacyMode.SENSITIVE) {
+            lastCommittedWord = null
             composing += text
             refreshComposition(ic)
             // One-shot shift decays after each char (caps stays). Matches
@@ -385,7 +409,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
             keyboardView?.setCandidates(emptyList())
             return
         }
-        val cands = engine.transliterate(composing, maxCandidates = 5)
+        val cands = suggestionsFor(composing)
         val top = cands.firstOrNull()?.bengali ?: composing
         ic.setComposingText(top, 1)
         keyboardView?.setCandidates(cands)
@@ -399,6 +423,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         // and discard any stale composition state first.
         BackspaceHandler.deleteSelection(ic)?.let { deleted ->
             composing = ""
+            lastCommittedWord = null
             keyboardView?.setCandidates(emptyList())
             if (!deleted) sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
             return
@@ -409,6 +434,8 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
             refreshComposition(ic)
             return
         }
+        lastCommittedWord = null
+        keyboardView?.setCandidates(emptyList())
         if (!BackspaceHandler.deleteBeforeCursor(ic)) {
             sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
         }
@@ -418,18 +445,30 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
 
     private fun handleSpaceOrEnter(ic: InputConnection, terminator: String, isEnter: Boolean) {
         if (mode.isBengaliBanglish && composing.isNotEmpty()) {
-            val cands = engine.transliterate(composing, maxCandidates = 5)
+            val cands = suggestionsFor(composing)
             val topBengali = cands.firstOrNull()?.bengali ?: composing
-            engine.onUserSelection(composing, topBengali)
+            val committedLatin = composing
+            rememberSelection(committedLatin, topBengali)
+            rememberLatinWord(committedLatin)
             ic.commitText(topBengali + terminator, 1)
             composing = ""
-            keyboardView?.setCandidates(emptyList())
+            lastCommittedWord = LastCommittedWord(
+                latin = committedLatin,
+                bengali = topBengali,
+                terminator = terminator,
+                alternatives = cands.filter { it.bengali != topBengali },
+            )
+            showPostCommitSuggestions()
             return
         }
 
         if (isEnter) {
+            lastCommittedWord = null
+            keyboardView?.setCandidates(emptyList())
             handleEditorEnter(ic)
         } else {
+            lastCommittedWord = null
+            keyboardView?.setCandidates(emptyList())
             ic.commitText(" ", 1)
         }
     }
@@ -451,12 +490,73 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
 
     private fun commitSpecificCandidate(candidate: Candidate) {
         val ic = currentInputConnection ?: return
+        when (candidate.replacement) {
+            CandidateReplacement.PREVIOUS_WORD -> {
+                val previous = lastCommittedWord ?: return
+                ic.deleteSurroundingText(previous.bengali.length + previous.terminator.length, 0)
+                ic.commitText(candidate.bengali + previous.terminator, 1)
+                lastCommittedWord = previous.copy(bengali = candidate.bengali)
+                rememberSelection(previous.latin, candidate.bengali)
+                showPostCommitSuggestions()
+                return
+            }
+            CandidateReplacement.INSERT -> {
+                ic.commitText(candidate.bengali + " ", 1)
+                lastCommittedWord = null
+                keyboardView?.setCandidates(emptyList())
+                return
+            }
+            CandidateReplacement.COMPOSING -> Unit
+        }
         // Remember the Latin-to-Bengali choice for future ranking BEFORE we
         // clear the composing buffer.
-        engine.onUserSelection(composing, candidate.bengali)
+        rememberSelection(composing, candidate.bengali)
+        rememberLatinWord(composing)
         ic.commitText(candidate.bengali, 1)
         composing = ""
         keyboardView?.setCandidates(emptyList())
+    }
+
+    private fun showPostCommitSuggestions() {
+        val previous = lastCommittedWord ?: return
+        val corrections = previous.alternatives
+            .filter { it.kind == CandidateKind.WORD || it.kind == CandidateKind.PHRASE }
+            .take(2)
+            .map { it.copy(replacement = CandidateReplacement.PREVIOUS_WORD) }
+        val completions = engine.suggest(
+            SuggestionRequest(
+                latinInput = "",
+                previousWords = recentLatinWords.toList(),
+                maxCandidates = 3,
+                includeEmoji = suggestionPrefs.emojiSuggestionsEnabled,
+                preferStandardBangla = suggestionPrefs.preferStandardBangla,
+                enableNoisyMatching = suggestionPrefs.noisySuggestionsEnabled,
+            ),
+        )
+        keyboardView?.setCandidates((corrections + completions).distinctBy { it.bengali }.take(6))
+    }
+
+    private fun suggestionsFor(latin: String): List<Candidate> = engine.suggest(
+        SuggestionRequest(
+            latinInput = latin,
+            previousWords = recentLatinWords.toList(),
+            maxCandidates = 6,
+            includeEmoji = suggestionPrefs.emojiSuggestionsEnabled,
+            preferStandardBangla = suggestionPrefs.preferStandardBangla,
+            enableNoisyMatching = suggestionPrefs.noisySuggestionsEnabled,
+        ),
+    )
+
+    private fun rememberSelection(latin: String, bengali: String) {
+        if (privacyMode == InputPrivacyMode.NORMAL) {
+            engine.onUserSelection(latin, bengali)
+        }
+    }
+
+    private fun rememberLatinWord(latin: String) {
+        if (privacyMode != InputPrivacyMode.NORMAL) return
+        recentLatinWords.addLast(latin.trim().lowercase())
+        while (recentLatinWords.size > 2) recentLatinWords.removeFirst()
     }
 
     // -- Language toggle --------------------------------------------------------
@@ -514,4 +614,11 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         mode = KeyboardMode.ENGLISH_LOWER
         keyboardView?.setMode(mode)
     }
+
+    private data class LastCommittedWord(
+        val latin: String,
+        val bengali: String,
+        val terminator: String,
+        val alternatives: List<Candidate>,
+    )
 }

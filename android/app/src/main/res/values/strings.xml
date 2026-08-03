@@ -25,4 +25,21 @@
 
     <!-- Voice screen -->
     <string name="voice_title">সহজাক্ষর ভয়েস</string>
+
+    <!-- Suggestions and local learning -->
+    <string name="suggestion_settings_title">পরামর্শ ও শেখা শব্দ</string>
+    <string name="suggestion_settings_body">কিবোর্ড কীভাবে বাংলা শব্দ বুঝবে ও মনে রাখবে তা ঠিক করুন।</string>
+    <string name="suggestion_noisy_label">ভুল বা সংক্ষিপ্ত Banglish বুঝুন</string>
+    <string name="suggestion_standard_label">সাধারণ লিখিত বাংলা আগে দেখান</string>
+    <string name="suggestion_emoji_label">ইমোজি পরামর্শ দেখান</string>
+    <string name="personal_dictionary_title">নিজের নাম ও জায়গা যোগ করুন</string>
+    <string name="personal_dictionary_latin">যেভাবে ইংরেজিতে লিখবেন</string>
+    <string name="personal_dictionary_bengali">যে বাংলা দেখাতে চান</string>
+    <string name="personal_dictionary_add">শব্দ যোগ করুন</string>
+    <string name="personal_dictionary_delete">মুছুন</string>
+    <string name="suggestion_forget_learned">শেখা শব্দগুলো মুছুন</string>
+    <string name="suggestion_forget_title">শেখা শব্দ মুছবেন?</string>
+    <string name="suggestion_forget_body">আপনি আগে যে পরামর্শগুলো বেছে নিয়েছেন সেগুলো কিবোর্ড ভুলে যাবে। নিজের যোগ করা নাম ও জায়গা থাকবে।</string>
+    <string name="suggestion_forget_confirm">মুছে দিন</string>
+    <string name="suggestion_forget_cancel">থাক</string>
 </resources>

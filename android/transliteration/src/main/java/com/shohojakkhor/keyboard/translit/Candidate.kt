@@ -13,7 +13,22 @@ public data class Candidate(
     val bengali: String,
     val source: CandidateSource,
     val score: Double,
+    val kind: CandidateKind = CandidateKind.WORD,
+    val replacement: CandidateReplacement = CandidateReplacement.COMPOSING,
 )
+
+public enum class CandidateKind {
+    WORD,
+    PHRASE,
+    EMOJI,
+    LITERAL,
+}
+
+public enum class CandidateReplacement {
+    COMPOSING,
+    PREVIOUS_WORD,
+    INSERT,
+}
 
 public enum class CandidateSource {
     /** Exact whole-word match in the seed / personal Bengali dictionary. */
@@ -31,4 +46,25 @@ public enum class CandidateSource {
 
     /** The user has previously selected this candidate for the same input. */
     MEMORY,
+
+    /** Exact match after conservative noisy Romanized-Bangla normalization. */
+    NORMALIZED_DICTIONARY,
+
+    /** Approximate match using Bengali-aware weighted edit distance. */
+    FUZZY_PHONETIC,
+
+    /** Common colloquial or regional Romanized form. */
+    DIALECT,
+
+    /** Completion from bounded local preceding-word context. */
+    CONTEXT,
+
+    /** Locally bundled or user-defined multi-word completion. */
+    PHRASE,
+
+    /** Local keyword-to-emoji suggestion. */
+    EMOJI,
+
+    /** User-created name, place, medicine, or other personal entry. */
+    PERSONAL_DICTIONARY,
 }

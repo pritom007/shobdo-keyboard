@@ -1,0 +1,32 @@
+# category<TAB>input<TAB>expected Bengali (must appear in top 3)
+traditional	valo	ভালো
+traditional	bhalo	ভালো
+traditional	ami	আমি
+traditional	tumi	তুমি
+traditional	korchi	করছি
+traditional	kemon	কেমন
+traditional	kharap	খারাপ
+traditional	bari	বাড়ি
+traditional	basha	বাসা
+traditional	dhonnobad	ধন্যবাদ
+noisy	vlo	ভালো
+noisy	vllo	ভালো
+noisy	kmn	কেমন
+noisy	amr	আমার
+noisy	tmr	তোমার
+noisy	apnr	আপনার
+noisy	asi	আছি
+noisy	aso	আছ
+noisy	sorir	শরীর
+noisy	basai	বাসায়
+dialect	korsi	করেছি
+dialect	kortasi	করছি
+dialect	kortesi	করছি
+dialect	aitasi	আসছি
+dialect	aitesi	আসছি
+phrase	aslmualikum	আসসালামু আলাইকুম
+phrase	assalamu alaikum	আসসালামু আলাইকুম
+phrase	salam alaikum	আসসালামু আলাইকুম
+phrase	allah hafez	আল্লাহ হাফেজ
+phrase	thik ase	ঠিক আছে
+phrase	thikache	ঠিক আছে
