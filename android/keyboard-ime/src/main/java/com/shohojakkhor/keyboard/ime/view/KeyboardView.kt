@@ -4,10 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.text.Spannable
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
-import android.text.style.RelativeSizeSpan
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
@@ -255,7 +251,10 @@ internal class KeyboardView(
 
     private fun buildKeyButton(key: Key): View {
         val button = Button(context).apply {
-            text = keycapText(key)
+            text = when (key.action) {
+                is KeyAction.Space -> ""
+                else -> key.label
+            }
             isAllCaps = false
             setTextSize(TypedValue.COMPLEX_UNIT_SP, keyLabelSp(key))
             setPadding(0, 0, 0, 0)
@@ -282,18 +281,6 @@ internal class KeyboardView(
             }
         }
         return button
-    }
-
-    private fun keycapText(key: Key): CharSequence = when {
-        key.action is KeyAction.Space -> ""
-        key.alternateHint == null -> key.label
-        else -> {
-            val hint = key.alternateHint.orEmpty()
-            SpannableString("$hint\n${key.label}").apply {
-                setSpan(RelativeSizeSpan(0.55f), 0, hint.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                setSpan(ForegroundColorSpan(HINT_COLOR), 0, hint.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
-        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -540,7 +527,6 @@ internal class KeyboardView(
         const val POPUP_CORNER_DP: Int = 12
         val BG_COLOR: Int = Color.parseColor("#E8EAED")
         val BANNER_COLOR: Int = Color.parseColor("#B00020")
-        val HINT_COLOR: Int = Color.parseColor("#0B5D61")
         val POPUP_COLOR: Int = Color.parseColor("#FFFDF7")
         val POPUP_SELECTED_COLOR: Int = Color.parseColor("#BFE6E3")
     }
