@@ -264,7 +264,7 @@ internal class KeyboardView(
                 0,
                 LayoutParams.MATCH_PARENT,
                 key.widthWeight,
-            ).apply popupWindow@{
+            ).apply {
                 marginStart = dp(2)
                 marginEnd = dp(2)
             }
@@ -371,7 +371,7 @@ internal class KeyboardView(
                 content.measuredWidth,
                 content.measuredHeight,
                 false,
-            ).apply {
+            ).apply popupWindow@{
                 isClippingEnabled = true
                 elevation = dp(8).toFloat()
                 setOnDismissListener {
