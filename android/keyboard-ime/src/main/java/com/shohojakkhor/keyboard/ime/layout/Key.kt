@@ -11,6 +11,9 @@ public sealed interface KeyAction {
     /** Insert a literal string (typically a single character). */
     public data class Character(val text: String) : KeyAction
 
+    /** Insert a Bengali character chosen from a key's hold-and-slide popup. */
+    public data class DirectBengali(val text: String) : KeyAction
+
     public data object Backspace : KeyAction
     public data object Space : KeyAction
     public data object Enter : KeyAction
@@ -44,11 +47,18 @@ public data class Key(
     val action: KeyAction,
     /** Relative width. 1.0 = a normal letter key. */
     val widthWeight: Float = 1f,
+    /** Bengali characters exposed by press-hold in Banglish mode. */
+    val alternates: List<String> = emptyList(),
 ) {
     init {
         require(widthWeight > 0f) { "widthWeight must be positive" }
         require(label.isNotEmpty()) { "label must not be empty" }
+        require(alternates.none(String::isBlank)) { "alternates must not be blank" }
     }
+
+    /** Compact hint rendered above the Latin label. */
+    public val alternateHint: String?
+        get() = alternates.take(2).takeIf { it.isNotEmpty() }?.joinToString("/")
 }
 
 /** A horizontal row of keys. */

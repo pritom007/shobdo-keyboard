@@ -10,4 +10,7 @@
     <string name="candidate_primary_description">%1$s, প্রধান পরামর্শ; স্পেস চাপলে এটি লেখা হবে</string>
     <string name="candidate_alternative_description">বিকল্প পরামর্শ %1$s</string>
     <string name="candidate_more_description">আরও পরামর্শ দেখুন</string>
+    <string name="banglish_key_with_alternates_description">%1$s অক্ষর। ধরে রাখলে বাংলা অক্ষর: %2$s</string>
+    <string name="bengali_alternates_opened">বাংলা অক্ষর বাছুন: %1$s। আঙুল সরিয়ে ছেড়ে দিন</string>
+    <string name="direct_bengali_character_description">বাংলা অক্ষর %1$s</string>
 </resources>

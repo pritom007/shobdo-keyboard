@@ -345,6 +345,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
 
         when (action) {
             is KeyAction.Character -> handleCharacter(ic, action.text)
+            is KeyAction.DirectBengali -> handleDirectBengali(ic, action.text)
             KeyAction.Space -> handleSpaceOrEnter(ic, terminator = " ", isEnter = false)
             KeyAction.Backspace -> handleBackspace(ic)
             KeyAction.Enter -> handleSpaceOrEnter(ic, terminator = "\n", isEnter = true)
@@ -396,6 +397,29 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         }
         val out = if (mode.isShifted) text.uppercase() else text
         ic.commitText(out, 1)
+        val next = KeyboardModeTransitions.afterCharCommit(mode)
+        if (next != mode) {
+            mode = next
+            keyboardView?.setMode(mode)
+        }
+    }
+
+    private fun handleDirectBengali(ic: InputConnection, text: String) {
+        // Direct Bengali characters and an active Latin composition must never
+        // overlap: finish the existing word first, then insert exactly what the
+        // user selected from the popup.
+        if (composing.isNotEmpty()) {
+            val candidates = suggestionsFor(composing)
+            val committed = candidates.firstOrNull()?.bengali ?: composing
+            rememberSelection(composing, committed)
+            rememberLatinWord(composing)
+            ic.commitText(committed, 1)
+            composing = ""
+        }
+        lastCommittedWord = null
+        keyboardView?.setCandidates(emptyList())
+        ic.commitText(text, 1)
+
         val next = KeyboardModeTransitions.afterCharCommit(mode)
         if (next != mode) {
             mode = next
