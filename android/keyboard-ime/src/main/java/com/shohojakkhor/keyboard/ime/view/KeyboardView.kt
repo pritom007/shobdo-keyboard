@@ -3,13 +3,20 @@ package com.shohojakkhor.keyboard.ime.view
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -240,13 +247,11 @@ internal class KeyboardView(
 
     private fun buildKeyButton(key: Key): View {
         val button = Button(context).apply {
-            text = when (key.action) {
-                is KeyAction.Space -> ""
-                else -> key.label
-            }
+            text = keycapText(key)
             isAllCaps = false
             setTextSize(TypedValue.COMPLEX_UNIT_SP, keyLabelSp(key))
             setPadding(0, 0, 0, 0)
+            gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
                 0,
                 LayoutParams.MATCH_PARENT,
@@ -259,6 +264,8 @@ internal class KeyboardView(
 
         if (key.action is KeyAction.Backspace) {
             configureRepeatingBackspace(button)
+        } else if (key.alternates.isNotEmpty()) {
+            configureAlternateGesture(button, key)
         } else {
             button.setOnClickListener {
                 it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -268,6 +275,176 @@ internal class KeyboardView(
         }
         return button
     }
+
+    private fun keycapText(key: Key): CharSequence = when {
+        key.action is KeyAction.Space -> ""
+        key.alternateHint == null -> key.label
+        else -> {
+            val hint = key.alternateHint.orEmpty()
+            SpannableString("$hint\n${key.label}").apply {
+                setSpan(RelativeSizeSpan(0.55f), 0, hint.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                setSpan(ForegroundColorSpan(HINT_COLOR), 0, hint.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun configureAlternateGesture(button: Button, key: Key) {
+        val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+        var downX = 0f
+        var downY = 0f
+        var popup: PopupWindow? = null
+        var popupContent: LinearLayout? = null
+        var selectedIndex = 0
+        var touchActive = false
+
+        fun updateSelection(rawX: Float) {
+            val content = popupContent ?: return
+            val location = IntArray(2)
+            content.getLocationOnScreen(location)
+            val index = ((rawX - location[0]) / ALTERNATE_ITEM_WIDTH_PX)
+                .toInt()
+                .coerceIn(0, key.alternates.lastIndex)
+            if (index != selectedIndex) {
+                selectedIndex = index
+                button.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            }
+            for (i in 0 until content.childCount) {
+                content.getChildAt(i).background = roundedBackground(
+                    if (i == selectedIndex) POPUP_SELECTED_COLOR else POPUP_COLOR,
+                    POPUP_CORNER_DP,
+                )
+            }
+        }
+
+        fun dismissPopup() {
+            popup?.dismiss()
+            popup = null
+            popupContent = null
+            button.isPressed = false
+        }
+
+        val showPopup = Runnable {
+            if (!touchActive || popup != null) return@Runnable
+            selectedIndex = 0
+            val content = LinearLayout(context).apply {
+                orientation = HORIZONTAL
+                setPadding(dp(4), dp(4), dp(4), dp(4))
+                background = roundedBackground(POPUP_COLOR, POPUP_CORNER_DP)
+            }
+            key.alternates.forEachIndexed { index, character ->
+                content.addView(
+                    TextView(context).apply {
+                        text = character
+                        gravity = Gravity.CENTER
+                        setTextColor(Color.BLACK)
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 28f)
+                        contentDescription = context.getString(
+                            R.string.direct_bengali_character_description,
+                            character,
+                        )
+                        background = roundedBackground(
+                            if (index == selectedIndex) POPUP_SELECTED_COLOR else POPUP_COLOR,
+                            POPUP_CORNER_DP,
+                        )
+                    },
+                    LinearLayout.LayoutParams(ALTERNATE_ITEM_WIDTH_PX, dp(ALTERNATE_POPUP_HEIGHT_DP)),
+                )
+            }
+            content.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            )
+            popupContent = content
+            popup = PopupWindow(
+                content,
+                content.measuredWidth,
+                content.measuredHeight,
+                false,
+            ).apply {
+                isClippingEnabled = true
+                elevation = dp(8).toFloat()
+                showAsDropDown(button, 0, -(button.height + content.measuredHeight + dp(6)))
+            }
+            button.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            button.announceForAccessibility(
+                context.getString(R.string.bengali_alternates_opened, key.alternates.joinToString(" ")),
+            )
+        }
+
+        button.contentDescription = context.getString(
+            R.string.banglish_key_with_alternates_description,
+            key.label,
+            key.alternates.joinToString(", "),
+        )
+        button.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            onKeyAction(key.action)
+        }
+        // Provides a deterministic alternative for TalkBack and switch access;
+        // touch users get the complete slide selector below.
+        button.setOnLongClickListener {
+            onKeyAction(KeyAction.DirectBengali(key.alternates.first()))
+            it.announceForAccessibility(key.alternates.first())
+            true
+        }
+        button.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    touchActive = true
+                    downX = event.x
+                    downY = event.y
+                    view.isPressed = true
+                    view.parent?.requestDisallowInterceptTouchEvent(true)
+                    view.postDelayed(showPopup, ALTERNATE_HOLD_DELAY_MS)
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    if (popup != null) {
+                        updateSelection(event.rawX)
+                    } else if (
+                        kotlin.math.abs(event.x - downX) > touchSlop ||
+                        kotlin.math.abs(event.y - downY) > touchSlop
+                    ) {
+                        view.removeCallbacks(showPopup)
+                    }
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    touchActive = false
+                    view.removeCallbacks(showPopup)
+                    if (popup != null) {
+                        updateSelection(event.rawX)
+                        val selected = key.alternates[selectedIndex]
+                        dismissPopup()
+                        onKeyAction(KeyAction.DirectBengali(selected))
+                        view.announceForAccessibility(selected)
+                    } else {
+                        view.isPressed = false
+                        view.performClick()
+                    }
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    touchActive = false
+                    view.removeCallbacks(showPopup)
+                    dismissPopup()
+                    true
+                }
+
+                else -> true
+            }
+        }
+    }
+
+    private fun roundedBackground(color: Int, cornerDp: Int): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = dp(cornerDp).toFloat()
+        }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun configureRepeatingBackspace(button: Button) {
@@ -335,7 +512,17 @@ internal class KeyboardView(
         const val CANDIDATE_STRIP_HEIGHT_DP: Int = 56
         const val BACKSPACE_REPEAT_DELAY_MS: Long = 350L
         const val BACKSPACE_REPEAT_INTERVAL_MS: Long = 55L
+        const val ALTERNATE_HOLD_DELAY_MS: Long = 350L
+        const val ALTERNATE_POPUP_HEIGHT_DP: Int = 58
+        const val ALTERNATE_ITEM_WIDTH_DP: Int = 58
+        const val POPUP_CORNER_DP: Int = 12
         val BG_COLOR: Int = Color.parseColor("#E8EAED")
         val BANNER_COLOR: Int = Color.parseColor("#B00020")
+        val HINT_COLOR: Int = Color.parseColor("#0B5D61")
+        val POPUP_COLOR: Int = Color.parseColor("#FFFDF7")
+        val POPUP_SELECTED_COLOR: Int = Color.parseColor("#BFE6E3")
     }
+
+    private val ALTERNATE_ITEM_WIDTH_PX: Int
+        get() = dp(ALTERNATE_ITEM_WIDTH_DP)
 }

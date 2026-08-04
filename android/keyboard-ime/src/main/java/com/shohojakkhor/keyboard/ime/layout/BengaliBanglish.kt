@@ -33,6 +33,17 @@ public object BengaliBanglish {
             shifted = mode.isShifted,
             langToggleLabel = EnglishQwerty.LABEL_TO_ENGLISH,
         )
-        return KeyboardLayout(id = "bn_banglish_${if (mode.isShifted) "upper" else "lower"}", rows = base.rows)
+        val rows = base.rows.map { row ->
+            KeyRow(
+                row.keys.map { key ->
+                    if (key.action is KeyAction.Character) {
+                        key.copy(alternates = BengaliKeyAlternates.forLatin(key.label))
+                    } else {
+                        key
+                    }
+                },
+            )
+        }
+        return KeyboardLayout(id = "bn_banglish_${if (mode.isShifted) "upper" else "lower"}", rows = rows)
     }
 }
