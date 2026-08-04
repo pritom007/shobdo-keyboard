@@ -1,13 +1,12 @@
 # Direct Bengali key alternates
 
-Banglish mode keeps its normal tap behavior. Each Latin letter additionally
-shows the first two Bengali alternatives as a compact hint. Holding the key
-opens every mapped alternative; sliding horizontally highlights an option and
-releasing inserts it directly.
+Banglish mode keeps its normal tap behavior and its original clean Latin-only
+keycaps. Holding a letter opens its Bengali alternatives; sliding horizontally
+highlights an option and releasing inserts it directly.
 
 Examples:
 
-- `a` shows `এ/আ` and also offers `অ`, `া`, and `ে`;
+- `a` opens `এ/আ` and also offers `অ`, `া`, and `ে`;
 - `k` offers `ক/খ`;
 - `t` offers `ত/থ/ট/ঠ`;
 - `s` offers `স/শ/ষ`;

@@ -56,9 +56,6 @@ public data class Key(
         require(alternates.none(String::isBlank)) { "alternates must not be blank" }
     }
 
-    /** Compact hint rendered above the Latin label. */
-    public val alternateHint: String?
-        get() = alternates.take(2).takeIf { it.isNotEmpty() }?.joinToString("/")
 }
 
 /** A horizontal row of keys. */

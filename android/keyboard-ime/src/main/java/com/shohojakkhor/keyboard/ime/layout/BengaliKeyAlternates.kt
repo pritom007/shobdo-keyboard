@@ -3,10 +3,9 @@ package com.shohojakkhor.keyboard.ime.layout
 /**
  * Direct Bengali characters available from each Latin key in Banglish mode.
  *
- * The first two entries become the small keycap hint. The remaining entries
- * stay reachable in the hold-and-slide popup. Similar Bengali sounds are kept
- * together so the mapping remains useful even when a user does not know a
- * formal Banglish spelling.
+ * All entries stay hidden until the hold-and-slide popup opens. Similar
+ * Bengali sounds are kept together so the mapping remains useful even when a
+ * user does not know a formal Banglish spelling.
  */
 public object BengaliKeyAlternates {
     private val mapping: Map<Char, List<String>> = mapOf(

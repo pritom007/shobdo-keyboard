@@ -23,6 +23,11 @@
     <string name="setup_voice_body">মাইকে কথা বলে লেখা তৈরি করে দেখুন।</string>
     <string name="setup_voice_button">ভয়েস চেষ্টা করুন</string>
 
+    <!-- App updates -->
+    <string name="setup_update_title">অ্যাপ আপডেট</string>
+    <string name="setup_update_body">সহজাক্ষরের সর্বশেষ নিরাপদ সংস্করণ ও APK দেখতে GitHub Releases খুলুন।</string>
+    <string name="setup_update_button">আপডেট দেখুন</string>
+
     <!-- Voice screen -->
     <string name="voice_title">সহজাক্ষর ভয়েস</string>
 

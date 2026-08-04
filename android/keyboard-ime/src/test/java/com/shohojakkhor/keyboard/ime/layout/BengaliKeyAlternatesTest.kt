@@ -15,7 +15,7 @@ class BengaliKeyAlternatesTest {
     }
 
     @Test
-    fun `a key exposes requested keycap hint order`() {
+    fun `a popup begins with requested Bengali order`() {
         assertEquals(listOf("এ", "আ"), BengaliKeyAlternates.forLatin("a").take(2))
         assertEquals(BengaliKeyAlternates.forLatin("a"), BengaliKeyAlternates.forLatin("A"))
     }

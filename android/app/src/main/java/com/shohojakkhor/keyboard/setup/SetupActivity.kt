@@ -2,6 +2,7 @@ package com.shohojakkhor.keyboard.setup
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
@@ -76,6 +77,7 @@ class SetupActivity : ComponentActivity() {
                         onEnableClick = ::openInputMethodSettings,
                         onPickClick = ::openInputMethodPicker,
                         onVoiceClick = ::openVoiceScreen,
+                        onUpdateClick = ::openLatestRelease,
                     )
                 }
             }
@@ -97,6 +99,13 @@ class SetupActivity : ComponentActivity() {
     private fun openVoiceScreen() {
         startActivity(
             Intent(this, com.shohojakkhor.keyboard.voice.VoiceActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
+
+    private fun openLatestRelease() {
+        startActivity(
+            Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_RELEASE_URL))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }
@@ -125,6 +134,7 @@ internal fun SetupScreen(
     onEnableClick: () -> Unit,
     onPickClick: () -> Unit,
     onVoiceClick: () -> Unit,
+    onUpdateClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -173,6 +183,13 @@ internal fun SetupScreen(
         )
         Spacer(Modifier.height(24.dp))
         SuggestionSettingsCard()
+        Spacer(Modifier.height(24.dp))
+        StepCard(
+            titleRes = R.string.setup_update_title,
+            bodyRes = R.string.setup_update_body,
+            buttonLabelRes = R.string.setup_update_button,
+            onClick = onUpdateClick,
+        )
         Spacer(Modifier.height(32.dp))
         Text(
             text = stringResource(R.string.setup_footer_note),
@@ -318,6 +335,8 @@ private fun SettingSwitch(label: String, checked: Boolean, onCheckedChange: (Boo
 }
 
 private const val MAX_VISIBLE_PERSONAL_ENTRIES = 20
+private const val LATEST_RELEASE_URL =
+    "https://github.com/pritom007/shohojakkhor-keyboard/releases/latest"
 
 @Composable
 private fun StepCard(
@@ -365,6 +384,6 @@ private fun StepCard(
 @Composable
 private fun SetupScreenPreview() {
     ShohojakkhorTheme {
-        SetupScreen(onEnableClick = {}, onPickClick = {}, onVoiceClick = {})
+        SetupScreen(onEnableClick = {}, onPickClick = {}, onVoiceClick = {}, onUpdateClick = {})
     }
 }
