@@ -13,6 +13,9 @@ Examples:
 - `s` offers `স/শ/ষ`;
 - `n` offers `ন/ণ/ঞ/ং`.
 
+Less-common signs remain in the expanded popup: `n` also includes chandrabindu
+(`ঁ`), while `x` includes hasanta (`্`) for direct conjunct construction.
+
 All 26 Latin letters have at least one mapping. Uppercase and lowercase expose
 the same direct choices because Shift remains available for conventional
 Avro-style Banglish input.

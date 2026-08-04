@@ -23,7 +23,7 @@ public object BengaliKeyAlternates {
         'k' to listOf("ক", "খ"),
         'l' to listOf("ল"),
         'm' to listOf("ম"),
-        'n' to listOf("ন", "ণ", "ঞ", "ং"),
+        'n' to listOf("ন", "ণ", "ঞ", "ং", "ঁ"),
         'o' to listOf("ও", "ঔ", "ো", "ৌ"),
         'p' to listOf("প", "ফ"),
         'q' to listOf("ক", "খ"),
@@ -33,7 +33,7 @@ public object BengaliKeyAlternates {
         'u' to listOf("উ", "ঊ", "ু", "ূ"),
         'v' to listOf("ভ", "ব"),
         'w' to listOf("ও", "য়", "ওয়"),
-        'x' to listOf("ক্ষ", "ক্স"),
+        'x' to listOf("ক্ষ", "ক্স", "্"),
         'y' to listOf("য", "য়"),
         'z' to listOf("জ", "ঝ"),
     )

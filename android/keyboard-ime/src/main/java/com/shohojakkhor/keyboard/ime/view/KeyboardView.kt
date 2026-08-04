@@ -58,6 +58,7 @@ internal class KeyboardView(
 
     private var currentMode: KeyboardMode = KeyboardMode.ENGLISH_LOWER
     private var privacyMode: InputPrivacyMode = InputPrivacyMode.NORMAL
+    private var activeAlternatePopup: PopupWindow? = null
 
     private var extraBottomGapPx: Int = 0
     private var systemBottomInsetPx: Int = 0
@@ -145,6 +146,7 @@ internal class KeyboardView(
 
     /** Show the voice listening panel, hiding the normal keyboard rows. */
     fun showVoicePanel() {
+        dismissActiveAlternatePopup()
         banner.visibility = View.GONE
         candidateStrip.visibility = View.GONE
         rowsContainer.visibility = View.GONE
@@ -195,9 +197,15 @@ internal class KeyboardView(
         ViewCompat.requestApplyInsets(this)
     }
 
+    override fun onDetachedFromWindow() {
+        dismissActiveAlternatePopup()
+        super.onDetachedFromWindow()
+    }
+
     // -- Rendering --------------------------------------------------------------
 
     private fun render() {
+        dismissActiveAlternatePopup()
         banner.visibility = if (privacyMode == InputPrivacyMode.SENSITIVE) View.VISIBLE else View.GONE
         if (privacyMode == InputPrivacyMode.SENSITIVE) {
             banner.text = context.getString(R.string.sensitive_mode_banner)
@@ -256,7 +264,7 @@ internal class KeyboardView(
                 0,
                 LayoutParams.MATCH_PARENT,
                 key.widthWeight,
-            ).apply {
+            ).apply popupWindow@{
                 marginStart = dp(2)
                 marginEnd = dp(2)
             }
@@ -319,6 +327,7 @@ internal class KeyboardView(
 
         fun dismissPopup() {
             popup?.dismiss()
+            if (activeAlternatePopup === popup) activeAlternatePopup = null
             popup = null
             popupContent = null
             button.isPressed = false
@@ -326,6 +335,7 @@ internal class KeyboardView(
 
         val showPopup = Runnable {
             if (!touchActive || popup != null) return@Runnable
+            dismissActiveAlternatePopup()
             selectedIndex = 0
             val content = LinearLayout(context).apply {
                 orientation = HORIZONTAL
@@ -364,8 +374,15 @@ internal class KeyboardView(
             ).apply {
                 isClippingEnabled = true
                 elevation = dp(8).toFloat()
+                setOnDismissListener {
+                    if (activeAlternatePopup === this@popupWindow) activeAlternatePopup = null
+                    popup = null
+                    popupContent = null
+                    button.isPressed = false
+                }
                 showAsDropDown(button, 0, -(button.height + content.measuredHeight + dp(6)))
             }
+            activeAlternatePopup = popup
             button.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             button.announceForAccessibility(
                 context.getString(R.string.bengali_alternates_opened, key.alternates.joinToString(" ")),
@@ -445,6 +462,11 @@ internal class KeyboardView(
             setColor(color)
             cornerRadius = dp(cornerDp).toFloat()
         }
+
+    private fun dismissActiveAlternatePopup() {
+        activeAlternatePopup?.dismiss()
+        activeAlternatePopup = null
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun configureRepeatingBackspace(button: Button) {
