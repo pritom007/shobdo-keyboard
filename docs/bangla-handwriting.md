@@ -6,7 +6,8 @@ voice. It uses Google ML Kit Digital Ink's Bengali (`bn`) model behind the
 
 ## Flow
 
-1. Tap `✍️` from a Bengali letter layout.
+1. Tap `✍️` from either letter layout. From English, this opens Bengali
+   handwriting and remembers it as the selected input mode.
 2. On first use, download the Bengali recognition model with a visible status.
 3. Draw naturally with a finger or stylus on the tall writing surface.
 4. After a 700 ms pause, recognize the complete stroke sequence on-device.
@@ -15,7 +16,9 @@ voice. It uses Google ML Kit Digital Ink's Bengali (`bn`) model behind the
 6. Clear the ink and continue with another word or phrase.
 
 The panel also provides undo-last-stroke, clear, host-field backspace, space,
-and return-to-keyboard actions. Handwriting remains the selected Bengali input
+enter/send, and return-to-keyboard actions. Enter honours the host app's
+requested action (such as Send, Search, Next, or Done) and otherwise inserts a
+newline. Handwriting remains the selected Bengali input
 surface across field changes, screen locks, and process restarts. It is never
 restored in sensitive fields; those continue to force the safe English layout.
 

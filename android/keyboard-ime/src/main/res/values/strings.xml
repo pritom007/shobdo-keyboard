@@ -26,5 +26,6 @@
     <string name="handwriting_clear">সব হাতের লেখা মুছুন</string>
     <string name="handwriting_backspace">আগের অক্ষর মুছুন</string>
     <string name="handwriting_space">স্পেস দিন</string>
+    <string name="handwriting_enter">এন্টার বা পাঠান</string>
     <string name="handwriting_keyboard">কিবোর্ডে ফিরুন</string>
 </resources>
