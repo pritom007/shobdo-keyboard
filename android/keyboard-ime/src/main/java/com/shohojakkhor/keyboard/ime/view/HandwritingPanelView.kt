@@ -69,9 +69,16 @@ internal class HandwritingPanelView(
         val controls = LinearLayout(context).apply { orientation = HORIZONTAL }
         controls.addView(controlButton("↶", R.string.handwriting_undo) { canvas.undo() })
         controls.addView(controlButton("মুছুন", R.string.handwriting_clear) { canvas.clear() })
-        controls.addView(controlButton("⌫", R.string.handwriting_backspace, onBackspace))
-        controls.addView(controlButton("স্পেস", R.string.handwriting_space, onSpace, weight = 1.65f))
-        controls.addView(controlButton("⌨", R.string.handwriting_keyboard, onClose))
+        controls.addView(controlButton("⌫", R.string.handwriting_backspace, action = onBackspace))
+        controls.addView(
+            controlButton(
+                "স্পেস",
+                R.string.handwriting_space,
+                weight = 1.65f,
+                action = onSpace,
+            ),
+        )
+        controls.addView(controlButton("⌨", R.string.handwriting_keyboard, action = onClose))
         addView(controls, LayoutParams(LayoutParams.MATCH_PARENT, dp(60)))
     }
 
@@ -134,8 +141,8 @@ internal class HandwritingPanelView(
     private fun controlButton(
         label: String,
         descriptionRes: Int,
-        action: () -> Unit,
         weight: Float = 1f,
+        action: () -> Unit,
     ): Button =
         Button(context).apply {
             text = label
