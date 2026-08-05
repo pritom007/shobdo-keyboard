@@ -13,4 +13,18 @@
     <string name="banglish_key_with_alternates_description">%1$s অক্ষর। ধরে রাখলে বাংলা অক্ষর: %2$s</string>
     <string name="bengali_alternates_opened">বাংলা অক্ষর বাছুন: %1$s। আঙুল সরিয়ে ছেড়ে দিন</string>
     <string name="direct_bengali_character_description">বাংলা অক্ষর %1$s</string>
+    <string name="handwriting_preparing">হাতের লেখা প্রস্তুত হচ্ছে…</string>
+    <string name="handwriting_downloading">বাংলা হাতের লেখার মডেল ডাউনলোড হচ্ছে…</string>
+    <string name="handwriting_ready">এখানে আঙুল দিয়ে বাংলা লিখুন</string>
+    <string name="handwriting_recognizing">লেখা বুঝছি…</string>
+    <string name="handwriting_choose_result">সঠিক লেখাটি বেছে নিন</string>
+    <string name="handwriting_model_error">মডেল ডাউনলোড হয়নি—ইন্টারনেট দেখে আবার চেষ্টা করুন</string>
+    <string name="handwriting_recognition_error">লেখাটি বুঝতে পারিনি—আবার লিখুন</string>
+    <string name="handwriting_canvas_description">বাংলা হাতের লেখা লেখার জায়গা</string>
+    <string name="handwriting_candidate_description">হাতের লেখার ফল %1$s</string>
+    <string name="handwriting_undo">শেষ দাগটি ফিরিয়ে নিন</string>
+    <string name="handwriting_clear">সব হাতের লেখা মুছুন</string>
+    <string name="handwriting_backspace">আগের অক্ষর মুছুন</string>
+    <string name="handwriting_space">স্পেস দিন</string>
+    <string name="handwriting_keyboard">কিবোর্ডে ফিরুন</string>
 </resources>

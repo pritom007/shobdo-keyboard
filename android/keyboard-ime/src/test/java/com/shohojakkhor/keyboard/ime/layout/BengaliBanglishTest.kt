@@ -76,6 +76,16 @@ class BengaliBanglishTest {
     }
 
     @Test
+    fun `Bangla bottom row exposes handwriting while English does not`() {
+        val banglaActions = BengaliBanglish.layoutFor(KeyboardMode.BENGALI_BANGLISH)!!
+            .rows.last().keys.map { it.action }
+        assertTrue(banglaActions.any { it is KeyAction.Handwriting })
+        val englishActions = EnglishQwerty.layoutFor(KeyboardMode.ENGLISH_LOWER)!!
+            .rows.last().keys.map { it.action }
+        assertTrue(englishActions.none { it is KeyAction.Handwriting })
+    }
+
+    @Test
     fun `all character keys have positive width in upper mode`() {
         val layout = BengaliBanglish.layoutFor(KeyboardMode.BENGALI_BANGLISH_UPPER)!!
         for (row in layout.rows) {

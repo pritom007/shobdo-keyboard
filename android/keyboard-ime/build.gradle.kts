@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.annotation)
+    implementation(libs.mlkit.digital.ink)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test)
