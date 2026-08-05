@@ -16,7 +16,11 @@ public object EnglishQwerty {
      */
     public fun layoutFor(mode: KeyboardMode): KeyboardLayout? {
         if (!mode.isEnglish) return null
-        return build(shifted = mode.isShifted, langToggleLabel = LABEL_TO_BENGALI)
+        return build(
+            shifted = mode.isShifted,
+            langToggleLabel = LABEL_TO_BENGALI,
+            includeHandwriting = true,
+        )
     }
 
     /**

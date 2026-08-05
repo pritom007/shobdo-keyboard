@@ -28,6 +28,7 @@ internal class HandwritingPanelView(
     private val onCandidate: (String) -> Unit,
     private val onBackspace: () -> Unit,
     private val onSpace: () -> Unit,
+    private val onEnter: () -> Unit,
     private val onClose: () -> Unit,
 ) : LinearLayout(context) {
     private val status: TextView
@@ -78,6 +79,7 @@ internal class HandwritingPanelView(
                 action = onSpace,
             ),
         )
+        controls.addView(controlButton("↵", R.string.handwriting_enter, action = onEnter))
         controls.addView(controlButton("⌨", R.string.handwriting_keyboard, action = onClose))
         addView(controls, LayoutParams(LayoutParams.MATCH_PARENT, dp(60)))
     }

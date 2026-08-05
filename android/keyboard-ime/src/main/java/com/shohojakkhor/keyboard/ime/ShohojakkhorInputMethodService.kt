@@ -154,6 +154,9 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         view.onHandwritingSpace = {
             currentInputConnection?.commitText(" ", 1)
         }
+        view.onHandwritingEnter = {
+            currentInputConnection?.let(::handleEditorEnter)
+        }
         view.onHandwritingClose = {
             languagePref.saveHandwritingPreferred(false)
             view.hideHandwritingPanel()
@@ -404,8 +407,13 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
     }
 
     private fun handleHandwriting() {
-        if (privacyMode == InputPrivacyMode.SENSITIVE || !mode.isBengaliBanglish) return
+        if (privacyMode == InputPrivacyMode.SENSITIVE) return
         commitComposingLatinAsIs()
+        if (!mode.isBengaliBanglish) {
+            mode = KeyboardMode.BENGALI_BANGLISH
+            keyboardView?.setMode(mode)
+            languagePref.saveLanguage(mode)
+        }
         languagePref.saveHandwritingPreferred(true)
         val view = keyboardView ?: return
         view.showHandwritingPanel()

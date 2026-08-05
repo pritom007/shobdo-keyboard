@@ -71,6 +71,7 @@ internal class KeyboardView(
     var onHandwritingCandidate: ((String) -> Unit)? = null
     var onHandwritingBackspace: (() -> Unit)? = null
     var onHandwritingSpace: (() -> Unit)? = null
+    var onHandwritingEnter: (() -> Unit)? = null
     var onHandwritingClose: (() -> Unit)? = null
 
     init {
@@ -121,6 +122,7 @@ internal class KeyboardView(
             onCandidate = { onHandwritingCandidate?.invoke(it) },
             onBackspace = { onHandwritingBackspace?.invoke() },
             onSpace = { onHandwritingSpace?.invoke() },
+            onEnter = { onHandwritingEnter?.invoke() },
             onClose = { onHandwritingClose?.invoke() },
         )
         handwritingPanel.visibility = View.GONE
