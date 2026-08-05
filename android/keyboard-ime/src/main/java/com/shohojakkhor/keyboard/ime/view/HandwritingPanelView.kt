@@ -43,7 +43,7 @@ internal class HandwritingPanelView(
             orientation = HORIZONTAL
             gravity = Gravity.CENTER
         }
-        addView(candidateRow, LayoutParams(LayoutParams.MATCH_PARENT, dp(58)))
+        addView(candidateRow, LayoutParams(LayoutParams.MATCH_PARENT, dp(48)))
 
         status = TextView(context).apply {
             gravity = Gravity.CENTER
@@ -51,7 +51,7 @@ internal class HandwritingPanelView(
             setTextColor(Color.parseColor("#17383A"))
             text = context.getString(R.string.handwriting_preparing)
         }
-        addView(status, LayoutParams(LayoutParams.MATCH_PARENT, dp(32)))
+        addView(status, LayoutParams(LayoutParams.MATCH_PARENT, dp(26)))
 
         canvas = InkCanvasView(context) { strokes ->
             onInkChanged()
@@ -61,7 +61,7 @@ internal class HandwritingPanelView(
         }.apply {
             contentDescription = context.getString(R.string.handwriting_canvas_description)
         }
-        addView(canvas, LayoutParams(LayoutParams.MATCH_PARENT, dp(190)).apply {
+        addView(canvas, LayoutParams(LayoutParams.MATCH_PARENT, dp(206)).apply {
             topMargin = dp(4)
             bottomMargin = dp(6)
         })
@@ -70,7 +70,7 @@ internal class HandwritingPanelView(
         controls.addView(controlButton("↶", R.string.handwriting_undo) { canvas.undo() })
         controls.addView(controlButton("মুছুন", R.string.handwriting_clear) { canvas.clear() })
         controls.addView(controlButton("⌫", R.string.handwriting_backspace, onBackspace))
-        controls.addView(controlButton("স্পেস", R.string.handwriting_space, onSpace))
+        controls.addView(controlButton("স্পেস", R.string.handwriting_space, onSpace, weight = 1.65f))
         controls.addView(controlButton("⌨", R.string.handwriting_keyboard, onClose))
         addView(controls, LayoutParams(LayoutParams.MATCH_PARENT, dp(60)))
     }
@@ -108,7 +108,7 @@ internal class HandwritingPanelView(
                 Button(context).apply {
                     this.text = text
                     isAllCaps = false
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 21f)
                     contentDescription = context.getString(R.string.handwriting_candidate_description, text)
                     setOnClickListener {
                         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -131,7 +131,12 @@ internal class HandwritingPanelView(
         status.text = context.getString(R.string.handwriting_ready)
     }
 
-    private fun controlButton(label: String, descriptionRes: Int, action: () -> Unit): Button =
+    private fun controlButton(
+        label: String,
+        descriptionRes: Int,
+        action: () -> Unit,
+        weight: Float = 1f,
+    ): Button =
         Button(context).apply {
             text = label
             isAllCaps = false
@@ -142,7 +147,7 @@ internal class HandwritingPanelView(
                 performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 action()
             }
-            layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, 1f).apply {
+            layoutParams = LayoutParams(0, LayoutParams.MATCH_PARENT, weight).apply {
                 marginStart = dp(2)
                 marginEnd = dp(2)
             }

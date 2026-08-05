@@ -7,9 +7,10 @@ import android.content.SharedPreferences
  * Persists the user's last chosen keyboard language across process death,
  * screen lock, and focus changes.
  *
- * We only remember whether the user's last **language** choice was
- * Bengali (Banglish) or English — we don't remember Symbols pages or the
- * transient shift/caps state, since those are always safe to start fresh.
+ * We remember whether the user's last **language** choice was Bengali
+ * (Banglish) or English, plus whether Bengali handwriting was the selected
+ * input surface. Symbols pages and transient shift/caps state still start
+ * fresh.
  *
  * Storage is a single [SharedPreferences] file, `keyboard_language`, with
  * one key `last_language_mode`. Values are the [KeyboardMode] enum name.
@@ -54,6 +55,17 @@ public class LanguagePreference(context: Context) {
             .apply()
     }
 
+    /** Whether the user explicitly left Bengali handwriting selected. */
+    public fun isHandwritingPreferred(): Boolean =
+        prefs.getBoolean(KEY_HANDWRITING_PREFERRED, false)
+
+    /** Persist an explicit switch between Bengali keys and handwriting. */
+    public fun saveHandwritingPreferred(preferred: Boolean) {
+        prefs.edit()
+            .putBoolean(KEY_HANDWRITING_PREFERRED, preferred)
+            .apply()
+    }
+
     /**
      * Reduce any mode to a language mode: English variants collapse to
      * [KeyboardMode.ENGLISH_LOWER]; Bengali variants (Banglish lower/upper/
@@ -71,5 +83,6 @@ public class LanguagePreference(context: Context) {
     private companion object {
         const val FILE_NAME: String = "keyboard_language"
         const val KEY_LAST_LANGUAGE: String = "last_language_mode"
+        const val KEY_HANDWRITING_PREFERRED: String = "handwriting_preferred"
     }
 }

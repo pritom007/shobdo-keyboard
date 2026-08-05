@@ -154,9 +154,13 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         view.onHandwritingSpace = {
             currentInputConnection?.commitText(" ", 1)
         }
-        view.onHandwritingClose = { view.hideHandwritingPanel() }
+        view.onHandwritingClose = {
+            languagePref.saveHandwritingPreferred(false)
+            view.hideHandwritingPanel()
+        }
         keyboardView = view
         wireVoiceController()
+        restoreHandwritingIfPreferred()
         return view
     }
 
@@ -331,6 +335,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         keyboardView?.setMode(mode)
         keyboardView?.setPrivacyMode(privacyMode)
         keyboardView?.hideHandwritingPanel()
+        restoreHandwritingIfPreferred()
     }
 
     override fun onFinishInput() {
@@ -401,6 +406,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
     private fun handleHandwriting() {
         if (privacyMode == InputPrivacyMode.SENSITIVE || !mode.isBengaliBanglish) return
         commitComposingLatinAsIs()
+        languagePref.saveHandwritingPreferred(true)
         val view = keyboardView ?: return
         view.showHandwritingPanel()
         val recognizer = handwritingRecognizer ?: GoogleBanglaHandwritingRecognizer().also {
@@ -428,9 +434,20 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
 
     private fun commitHandwritingCandidate(text: String) {
         if (text.isBlank()) return
-        currentInputConnection?.commitText(text, 1)
+        currentInputConnection?.commitText("$text ", 1)
         lastCommittedWord = null
         keyboardView?.setCandidates(emptyList())
+    }
+
+    private fun restoreHandwritingIfPreferred() {
+        if (
+            currentEditorInfo != null &&
+            privacyMode == InputPrivacyMode.NORMAL &&
+            mode.isBengaliBanglish &&
+            languagePref.isHandwritingPreferred()
+        ) {
+            handleHandwriting()
+        }
     }
 
     // -- Character handling -----------------------------------------------------
@@ -658,6 +675,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
 
         mode = safeNext
         keyboardView?.setMode(mode)
+        languagePref.saveHandwritingPreferred(false)
 
         // Persist the user's explicit language choice so it survives
         // screen lock, process death, and focus changes. Only persist

@@ -10,12 +10,14 @@ voice. It uses Google ML Kit Digital Ink's Bengali (`bn`) model behind the
 2. On first use, download the Bengali recognition model with a visible status.
 3. Draw naturally with a finger or stylus on the tall writing surface.
 4. After a 700 ms pause, recognize the complete stroke sequence on-device.
-5. Show up to three large results and commit only the result the user taps.
+5. Show up to three large results and commit the result the user taps followed
+   by a space, so the next handwritten word starts naturally.
 6. Clear the ink and continue with another word or phrase.
 
 The panel also provides undo-last-stroke, clear, host-field backspace, space,
-and return-to-keyboard actions. It closes on field changes and is unavailable
-in sensitive fields.
+and return-to-keyboard actions. Handwriting remains the selected Bengali input
+surface across field changes, screen locks, and process restarts. It is never
+restored in sensitive fields; those continue to force the safe English layout.
 
 ## Architecture
 
