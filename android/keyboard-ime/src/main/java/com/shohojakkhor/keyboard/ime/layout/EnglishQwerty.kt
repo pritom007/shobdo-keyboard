@@ -24,7 +24,11 @@ public object EnglishQwerty {
      * caption of the language toggle key so it reads e.g. "বাং" when in
      * English mode and "En" when in Banglish mode.
      */
-    internal fun build(shifted: Boolean, langToggleLabel: String): KeyboardLayout {
+    internal fun build(
+        shifted: Boolean,
+        langToggleLabel: String,
+        includeHandwriting: Boolean = false,
+    ): KeyboardLayout {
         val letters: List<String> = if (shifted) UPPER_LETTERS else LOWER_LETTERS
         val row1 = KeyRow(letters.subList(0, 10).map { it.asCharKey() })
         val row2Padding = 0.5f
@@ -41,17 +45,21 @@ public object EnglishQwerty {
                 + letters.subList(19, 26).map { it.asCharKey() }
                 + listOf(Key(BACKSPACE_LABEL, KeyAction.Backspace, widthWeight = 1.5f)),
         )
-        val row4 = KeyRow(
-            listOf(
+        val row4Keys = mutableListOf(
                 Key(SYMBOLS_LABEL, KeyAction.ToggleSymbols, widthWeight = 1.5f),
                 Key(langToggleLabel, KeyAction.ToggleLanguage, widthWeight = 1.2f),
                 Key(GLOBE_LABEL, KeyAction.ShowImePicker, widthWeight = 1.0f),
                 Key(MIC_LABEL, KeyAction.Voice, widthWeight = 1.0f),
-                Key(SPACE_LABEL, KeyAction.Space, widthWeight = 3.6f),
+        )
+        if (includeHandwriting) {
+            row4Keys += Key(HANDWRITING_LABEL, KeyAction.Handwriting, widthWeight = 1.0f)
+        }
+        row4Keys += listOf(
+                Key(SPACE_LABEL, KeyAction.Space, widthWeight = if (includeHandwriting) 3.0f else 3.6f),
                 Key(".", KeyAction.Character("."), widthWeight = 1.0f),
                 Key(ENTER_LABEL, KeyAction.Enter, widthWeight = 1.8f),
-            ),
         )
+        val row4 = KeyRow(row4Keys)
 
         return KeyboardLayout(
             id = "en_qwerty_${if (shifted) "upper" else "lower"}",
@@ -78,6 +86,7 @@ public object EnglishQwerty {
     internal const val LABEL_TO_ENGLISH = "En"
     internal const val GLOBE_LABEL = "\uD83C\uDF10" // 🌐
     internal const val MIC_LABEL = "\uD83C\uDF99" // 🎙️
+    internal const val HANDWRITING_LABEL = "✍️"
     internal const val SPACE_LABEL = " "
     internal const val ENTER_LABEL = "↵"
 

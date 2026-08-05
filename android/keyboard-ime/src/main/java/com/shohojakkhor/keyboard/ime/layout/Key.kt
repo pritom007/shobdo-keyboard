@@ -35,6 +35,9 @@ public sealed interface KeyAction {
 
     /** Open the voice listening panel (mic key). Hidden in sensitive fields. */
     public data object Voice : KeyAction
+
+    /** Open the local Bengali handwriting panel. */
+    public data object Handwriting : KeyAction
 }
 
 /**

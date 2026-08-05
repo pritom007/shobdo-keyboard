@@ -12,6 +12,9 @@ import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import androidx.core.view.WindowCompat
 import com.shohojakkhor.keyboard.ime.layout.KeyAction
+import com.shohojakkhor.keyboard.ime.handwriting.GoogleBanglaHandwritingRecognizer
+import com.shohojakkhor.keyboard.ime.handwriting.HandwritingModelState
+import com.shohojakkhor.keyboard.ime.handwriting.InkStroke
 import com.shohojakkhor.keyboard.ime.privacy.DefaultInputPrivacyPolicy
 import com.shohojakkhor.keyboard.ime.privacy.InputPrivacyMode
 import com.shohojakkhor.keyboard.ime.privacy.InputPrivacyPolicy
@@ -116,6 +119,8 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
     private var hybridRecognizer: HybridSpeechRecognizer? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var voiceTickSecond = -1L
+    private var handwritingRecognizer: GoogleBanglaHandwritingRecognizer? = null
+    private var handwritingRequestId: Long = 0
 
     override fun onCreate() {
         super.onCreate()
@@ -140,6 +145,16 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         view.onVoiceStop = { voiceController.stop() }
         view.onVoiceCancel = { voiceController.cancel() }
         view.onVoiceRetry = { voiceController.reset(); voiceController.start() }
+        view.onHandwritingInk = ::recognizeHandwriting
+        view.onHandwritingChanged = { handwritingRequestId++ }
+        view.onHandwritingCandidate = ::commitHandwritingCandidate
+        view.onHandwritingBackspace = {
+            currentInputConnection?.let(::handleBackspace)
+        }
+        view.onHandwritingSpace = {
+            currentInputConnection?.commitText(" ", 1)
+        }
+        view.onHandwritingClose = { view.hideHandwritingPanel() }
         keyboardView = view
         wireVoiceController()
         return view
@@ -315,6 +330,7 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         }
         keyboardView?.setMode(mode)
         keyboardView?.setPrivacyMode(privacyMode)
+        keyboardView?.hideHandwritingPanel()
     }
 
     override fun onFinishInput() {
@@ -330,12 +346,15 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
         lastCommittedWord = null
         privacyMode = InputPrivacyMode.NORMAL
         keyboardView?.setPrivacyMode(privacyMode)
+        keyboardView?.hideHandwritingPanel()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         voiceRecognizer?.release()
         voiceRecognizer = null
+        handwritingRecognizer?.close()
+        handwritingRecognizer = null
     }
 
     // -- Key dispatch -----------------------------------------------------------
@@ -375,7 +394,43 @@ public class ShohojakkhorInputMethodService : InputMethodService() {
             }
 
             KeyAction.Voice -> handleVoice()
+            KeyAction.Handwriting -> handleHandwriting()
         }
+    }
+
+    private fun handleHandwriting() {
+        if (privacyMode == InputPrivacyMode.SENSITIVE || !mode.isBengaliBanglish) return
+        commitComposingLatinAsIs()
+        val view = keyboardView ?: return
+        view.showHandwritingPanel()
+        val recognizer = handwritingRecognizer ?: GoogleBanglaHandwritingRecognizer().also {
+            handwritingRecognizer = it
+        }
+        recognizer.ensureModel { state ->
+            mainHandler.post { keyboardView?.setHandwritingModelState(state) }
+        }
+    }
+
+    private fun recognizeHandwriting(strokes: List<InkStroke>) {
+        val recognizer = handwritingRecognizer ?: return
+        val requestId = ++handwritingRequestId
+        recognizer.recognize(strokes) { result ->
+            mainHandler.post {
+                if (requestId != handwritingRequestId) return@post
+                result.onSuccess {
+                    if (it.isEmpty()) keyboardView?.setHandwritingError()
+                    else keyboardView?.setHandwritingCandidates(it)
+                }
+                    .onFailure { keyboardView?.setHandwritingError() }
+            }
+        }
+    }
+
+    private fun commitHandwritingCandidate(text: String) {
+        if (text.isBlank()) return
+        currentInputConnection?.commitText(text, 1)
+        lastCommittedWord = null
+        keyboardView?.setCandidates(emptyList())
     }
 
     // -- Character handling -----------------------------------------------------

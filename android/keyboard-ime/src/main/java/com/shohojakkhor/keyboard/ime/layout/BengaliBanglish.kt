@@ -32,6 +32,7 @@ public object BengaliBanglish {
         val base = EnglishQwerty.build(
             shifted = mode.isShifted,
             langToggleLabel = EnglishQwerty.LABEL_TO_ENGLISH,
+            includeHandwriting = true,
         )
         val rows = base.rows.map { row ->
             KeyRow(

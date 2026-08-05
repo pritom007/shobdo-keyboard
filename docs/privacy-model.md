@@ -11,6 +11,7 @@ describes what the app and backend may and may not do with that data.
 - Every AI-generated draft
 - Every revision
 - Every personal-dictionary entry
+- Every handwriting stroke and recognition candidate
 - The surrounding text of the field the user is editing
 
 ## What is allowed in logs
@@ -46,8 +47,21 @@ Only anonymous, non-content signals:
 | Personal dictionary | Room DB (encrypted for sensitive entries) | Until user deletes it |
 | User preferences | DataStore | Until user clears app data |
 | Audio buffer | RAM only | Discarded immediately after upload / on cancel |
+| Handwriting strokes and candidates | RAM only | Cleared after selection, clear, input change, or IME process death |
 
 The IME never writes typed content or audio to disk.
+
+## Google ML Kit handwriting
+
+The optional Bengali handwriting mode uses Google ML Kit Digital Ink with the
+`bn` model. Stroke coordinates, timing, and recognized text are processed on
+the device and are never sent to the Shohojakkhor backend or logged. The
+language model is downloaded from Google on first use and then works offline.
+
+ML Kit may contact Google for model delivery, fixes, accelerator compatibility,
+and API performance/utilization metrics. Google states that input data and
+recognition output are not sent to its servers. This dependency must be named
+in the public privacy disclosure before a production release.
 
 ## Backend data flow (planned M2+)
 
@@ -101,6 +115,7 @@ accept, the provider abstraction (`speech-domain.SpeechToTextProvider` and
 - 🧠 no learning from user selections
 - 📜 no transcript history
 - 🎙️ no surrounding-text reading
+- ✍️ handwriting mode unavailable
 - 🪪 UI shows a clear indicator ("সুরক্ষিত মোড — কেবল সাধারণ কিবোর্ড")
 
 Fields classified as SENSITIVE (M1):

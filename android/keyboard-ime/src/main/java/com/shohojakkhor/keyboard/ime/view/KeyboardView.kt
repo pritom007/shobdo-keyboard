@@ -25,6 +25,8 @@ import com.shohojakkhor.keyboard.ime.layout.KeyAction
 import com.shohojakkhor.keyboard.ime.layout.KeyRow
 import com.shohojakkhor.keyboard.ime.layout.KeyboardLayout
 import com.shohojakkhor.keyboard.ime.layout.SymbolsLayout
+import com.shohojakkhor.keyboard.ime.handwriting.HandwritingModelState
+import com.shohojakkhor.keyboard.ime.handwriting.InkStroke
 import com.shohojakkhor.keyboard.ime.privacy.InputPrivacyMode
 import com.shohojakkhor.keyboard.ime.state.KeyboardMode
 import com.shohojakkhor.keyboard.ime.voice.VoiceStrings
@@ -51,6 +53,7 @@ internal class KeyboardView(
     private val banner: TextView
     private val candidateStrip: CandidateStripView
     private val voicePanel: VoicePanelView
+    private val handwritingPanel: HandwritingPanelView
 
     private var currentMode: KeyboardMode = KeyboardMode.ENGLISH_LOWER
     private var privacyMode: InputPrivacyMode = InputPrivacyMode.NORMAL
@@ -63,6 +66,12 @@ internal class KeyboardView(
     var onVoiceStop: (() -> Unit)? = null
     var onVoiceCancel: (() -> Unit)? = null
     var onVoiceRetry: (() -> Unit)? = null
+    var onHandwritingInk: ((List<InkStroke>) -> Unit)? = null
+    var onHandwritingChanged: (() -> Unit)? = null
+    var onHandwritingCandidate: ((String) -> Unit)? = null
+    var onHandwritingBackspace: (() -> Unit)? = null
+    var onHandwritingSpace: (() -> Unit)? = null
+    var onHandwritingClose: (() -> Unit)? = null
 
     init {
         orientation = VERTICAL
@@ -104,6 +113,18 @@ internal class KeyboardView(
         )
         voicePanel.visibility = View.GONE
         addView(voicePanel, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+
+        handwritingPanel = HandwritingPanelView(
+            context = context,
+            onInkReady = { onHandwritingInk?.invoke(it) },
+            onInkChanged = { onHandwritingChanged?.invoke() },
+            onCandidate = { onHandwritingCandidate?.invoke(it) },
+            onBackspace = { onHandwritingBackspace?.invoke() },
+            onSpace = { onHandwritingSpace?.invoke() },
+            onClose = { onHandwritingClose?.invoke() },
+        )
+        handwritingPanel.visibility = View.GONE
+        addView(handwritingPanel, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
         // 4. Navigation-bar / gesture inset applied as bottom padding on the
         //    root so no key is hidden under gesture-nav on Android 10+.
@@ -147,6 +168,7 @@ internal class KeyboardView(
         candidateStrip.visibility = View.GONE
         rowsContainer.visibility = View.GONE
         voicePanel.visibility = View.VISIBLE
+        handwritingPanel.visibility = View.GONE
         voicePanel.showListening()
     }
 
@@ -175,6 +197,26 @@ internal class KeyboardView(
         candidateStrip.visibility =
             if (currentMode.isBengaliBanglish) View.VISIBLE else View.GONE
     }
+
+    fun showHandwritingPanel() {
+        dismissActiveAlternatePopup()
+        banner.visibility = View.GONE
+        candidateStrip.visibility = View.GONE
+        rowsContainer.visibility = View.GONE
+        voicePanel.visibility = View.GONE
+        handwritingPanel.visibility = View.VISIBLE
+    }
+
+    fun hideHandwritingPanel() {
+        handwritingPanel.visibility = View.GONE
+        rowsContainer.visibility = View.VISIBLE
+        banner.visibility = if (privacyMode == InputPrivacyMode.SENSITIVE) View.VISIBLE else View.GONE
+        candidateStrip.visibility = if (currentMode.isBengaliBanglish) View.VISIBLE else View.GONE
+    }
+
+    fun setHandwritingModelState(state: HandwritingModelState) = handwritingPanel.setModelState(state)
+    fun setHandwritingCandidates(candidates: List<String>) = handwritingPanel.setCandidates(candidates)
+    fun setHandwritingError() = handwritingPanel.setRecognitionError()
 
     fun setExtraBottomGapDp(gapDp: Int) {
         val clamped = gapDp.coerceIn(0, 96)
