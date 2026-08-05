@@ -2,12 +2,12 @@ package com.shohojakkhor.keyboard.ime.handwriting
 
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.common.model.RemoteModelManager
-import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognition
-import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognitionModel
-import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognitionModelIdentifier
-import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognizer
-import com.google.mlkit.vision.digitalink.recognition.DigitalInkRecognizerOptions
-import com.google.mlkit.vision.digitalink.recognition.Ink
+import com.google.mlkit.vision.digitalink.DigitalInkRecognition
+import com.google.mlkit.vision.digitalink.DigitalInkRecognitionModel
+import com.google.mlkit.vision.digitalink.DigitalInkRecognitionModelIdentifier
+import com.google.mlkit.vision.digitalink.DigitalInkRecognizer
+import com.google.mlkit.vision.digitalink.DigitalInkRecognizerOptions
+import com.google.mlkit.vision.digitalink.Ink
 
 /** Google ML Kit `bn` recognizer. Stroke content never leaves the device. */
 public class GoogleBanglaHandwritingRecognizer : BanglaHandwritingRecognizer {
